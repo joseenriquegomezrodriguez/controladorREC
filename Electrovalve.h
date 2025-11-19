@@ -13,5 +13,6 @@ class Electrovalve : public Rele{
     public:
         Electrovalve(Program* Programs, uint8_t relePin);
         void check();
+        void changeState();
 };
 #endif

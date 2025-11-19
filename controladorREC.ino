@@ -5,15 +5,13 @@
 #include "Frame.h"
 #include "Electrovalve.h"
 #include "Program.h"
+#include "Pumb.h"
+#include "Button.h"
 
 // Definiciones de arrays de días fijos (necesario si Program espera un const uint8_t days[])
 const uint8_t NO_DAYS[7] = {0, 0, 0, 0, 0, 0, 0};
 const uint8_t SATURDAY[7] = {0, 0, 0, 0, 0, 0, 1};
 const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1}; 
-
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Init Serial at 9600");
 
   // 1. CORRECCIÓN: Inicialización de objetos temporales DateTime
   // Se usa la sintaxis estándar de constructor C++: Tipo(param1, param2...)
@@ -24,9 +22,14 @@ void setup() {
   Frame spring(DateTime(2026, 3, 21), DateTime(2026, 6, 21, 23, 59, 59));
   Frame summer(DateTime(2026, 6, 22), DateTime(2026, 9, 23, 23, 59, 59));
   Frame autumn(DateTime(2026, 9, 24), DateTime(2026, 12, 21, 23, 59, 59));
+  Pumb pumb(4);
+  
+  Button E1Button(9);
+  Button E2Button(10);
+  Button E3Button(11);
+  Button ModeButton(8);
+  
 
-  
-  
   Program E1Programs[4] = { 
       Program(5, 10, NO_DAYS, &winter), 
       Program(5, 10, NO_DAYS, &spring), 
@@ -58,10 +61,17 @@ void setup() {
   Electrovalve E3(&E3Programs[0], 7); // Usando E3Programs
 
   // 4. CORRECCIÓN: Nombre de clase 'Controller' debe coincidir con el include 'Controler.h'. 
-  // Asumiendo que la clase se llama Controller, se pasa la referencia a los objetos.
-  Controler rec(E1, E2, E3);
+  // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
+  Controler rec(&E1, &E2, &E3, &pumb, &ModeButton, &E1Button,&E2Button,&E3Button);
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Init Serial at 9600");
+  rec.init(); 
+
 }
 
 void loop() {
   delay(1000);
+  rec.check(); 
 }

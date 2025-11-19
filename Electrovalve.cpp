@@ -9,8 +9,14 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
   
   state = 1;
   
-  
+  init();
+  setOFF();
+
   for (int i = 0; i < 4; ++i) {
         programs[i] = &Programs[i]; 
     }
+};
+
+void Electrovalve::changeState(){
+
 };

@@ -8,6 +8,7 @@ class Rele {
         uint8_t pin;
     public:
         Rele(uint8_t Pin,bool Status);
+        void init();
         void setON();
         void setOFF();
         bool getStatus();
