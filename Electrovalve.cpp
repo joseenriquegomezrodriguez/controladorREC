@@ -10,7 +10,7 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
   state = 1;
   
   init();
-  setOFF();
+  
 
   for (int i = 0; i < 4; ++i) {
         programs[i] = &Programs[i]; 
@@ -18,5 +18,28 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
 };
 
 void Electrovalve::changeState(){
-
+  switch (state) {
+    case 0: {
+        state = 1;
+        return;
+      }
+      case 1: {
+        state =2;
+        setON();
+        return;
+      }
+      case 2: {
+        state = 0;
+        setOFF();
+        return;
+      }
+  };
 };
+
+char* Electrovalve::getLabelState(){
+  // Check bounds just in case, state should be 0, 1, or 2
+    if (state < 3) {
+        return labelState[state];
+    }
+    return labelState[0]; // Default to "X" if state is out of bounds
+}

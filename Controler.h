@@ -23,6 +23,17 @@ class Controler{
     Clock clock;
     DateTime backLightTime;
     uint8_t backLightDuration;
+
+    // Posiciones de las variables en pantalla
+    const uint8_t pos_E[2]  = {17, 0};
+    const uint8_t pos_M[2]  = {7, 1};
+    const uint8_t pos_E1[2] = {12, 1};
+    const uint8_t pos_E2[2] = {15, 1};
+    const uint8_t pos_E3[2] = {18, 1};
+    const uint8_t pos_VA[2] = {11, 2};
+    const uint8_t pos_D[2]  = {9, 3};
+    const uint8_t pos_H[2]  = {14, 3}; // Hora
+    
     
     public:
         Controler(Electrovalve* e1,Electrovalve* e2,Electrovalve* e3, Pumb* PUmb, Button* modeButton, Button* e1Button, Button* e4Button, Button* e3Button);

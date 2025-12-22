@@ -8,6 +8,7 @@ class Display {
     private:
         LiquidCrystal_I2C lcd;
         bool backLight;
+        
        
     public:
         Display();
@@ -15,6 +16,6 @@ class Display {
         void setON();
         void setOFF();
         bool getBackLight();
-        void print(uint8_t X, uint8_t Y, char16_t txt);
+        void print(uint8_t X, uint8_t Y, char txt);
 };
 #endif

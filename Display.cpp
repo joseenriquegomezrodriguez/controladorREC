@@ -19,7 +19,7 @@ void Display::init(){
 bool Display::getBackLight(){
     return backLight;
 };
-void Display::print(uint8_t X, uint8_t Y, char16_t txt ){
+void Display::print(uint8_t X, uint8_t Y, char txt ){
     lcd.setCursor(X,Y);
     lcd.print(txt);
 };

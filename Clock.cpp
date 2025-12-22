@@ -24,3 +24,18 @@ void Clock::init(){
 DateTime Clock::now(){
     return RTC.now();
 };
+
+char* Clock::getHour(){
+  DateTime today = now();
+  char hourBuffer;
+  // sprintf escribe el string en hourBuffer
+    sprintf(hourBuffer, "%02d:%02d", today.hour(), today.minute());
+    
+    // Se devuelve el puntero al buffer estático
+    return hourBuffer;
+};
+
+char* Clock::getDayOfTheWeek(){
+  DateTime today = now();
+  return D[today.dayOfTheWeek()];
+};
