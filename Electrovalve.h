@@ -15,6 +15,6 @@ class Electrovalve : public Rele{
         Electrovalve(Program* Programs, uint8_t relePin);
         void check();
         void changeState();
-        char* getLabelState();
+        const char* getLabelState();
 };
 #endif

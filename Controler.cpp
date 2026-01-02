@@ -8,15 +8,17 @@ Controler::Controler(Electrovalve* e1,Electrovalve* e2,Electrovalve* e3,  Pumb* 
 };
 void Controler::setAuto(){
   state = 0;
-
+  display.printMode("AUTO");
 };
 void Controler::setManual(){
     state = 1;
     pumb->setON();
+    display.printMode("MANU");
 };
 void Controler::setStop(){
     state = 2;
     pumb->setOFF();
+    display.printMode("STOP");
 };
 
 void Controler::init(){};
@@ -56,17 +58,17 @@ void Controler::checkButtons(){
   if ((E1Button->read()==LOW)&&(display.getBackLight())){
     E1->changeState();
     sprintf(printBuffer, "%s1", E1->getLabelState());
-    display.print(pos_E1[0], pos_E1[1], printBuffer);
+    display.printE1(printBuffer);
   };
   if ((E2Button->read()==LOW)&&(display.getBackLight())){
     E2->changeState();
     sprintf(printBuffer, "%s2", E2->getLabelState());
-    display.print(pos_E2[0], pos_E2[1], printBuffer);
+    display.printE2(printBuffer);
   };
   if ((E3Button->read()==LOW)&&(display.getBackLight())){
     E3->changeState();
     sprintf(printBuffer, "%s3", E3->getLabelState());
-    display.print(pos_E3[0], pos_E3[1], printBuffer);
+    display.printE3(printBuffer);
   };
   if ((E1Button->read()==LOW)&&(E1Button->read()==LOW)&&(E1Button->read()==LOW)&&(!display.getBackLight())){
     display.setON();
@@ -80,11 +82,13 @@ void Controler::checkIrrigation(){
 void Controler::check(){
 
   //Print hour
-  display.print(pos_H[0],pos_H[1],clock.getHour());
+  display.printHour(clock.getHour());
 
   //Print dayOfTheWeek
-  display.print(pos_D[0],pos_D[1],clock.getDayOfTheWeek());
+  display.printDay(clock.getDayOfTheWeek());
   
+  //Print estation
+  display.printStation(clock.getStacion());
   
   Controler::checkButtons();
   Controler::checkBackLight();

@@ -15,8 +15,8 @@ class Clock {
         void init();
         DateTime now();
         char* getHour();
-        char* getDayOfTheWeek();
-        //char* getStacion();
+        const char* getDayOfTheWeek();
+        const char* getStacion();
         
 };
 #endif

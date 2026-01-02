@@ -26,16 +26,18 @@ DateTime Clock::now(){
 };
 
 char* Clock::getHour(){
+  
+  static char hourBuffer[6]; // 'static' ensures the memory persists after function ends
   DateTime today = now();
-  char hourBuffer;
-  // sprintf escribe el string en hourBuffer
-    sprintf(hourBuffer, "%02d:%02d", today.hour(), today.minute());
-    
-    // Se devuelve el puntero al buffer estático
-    return hourBuffer;
+  sprintf(hourBuffer, "%02d:%02d", today.hour(), today.minute());
+  return hourBuffer;
 };
 
-char* Clock::getDayOfTheWeek(){
+const char* Clock::getDayOfTheWeek(){
   DateTime today = now();
   return D[today.dayOfTheWeek()];
+};
+const char* Clock::getStacion(){
+  DateTime today = now();
+  return E[today.month()-1];
 };

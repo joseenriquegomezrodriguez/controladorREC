@@ -36,7 +36,7 @@ void Electrovalve::changeState(){
   };
 };
 
-char* Electrovalve::getLabelState(){
+const char* Electrovalve::getLabelState(){
   // Check bounds just in case, state should be 0, 1, or 2
     if (state < 3) {
         return labelState[state];
