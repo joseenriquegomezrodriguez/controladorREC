@@ -5,20 +5,25 @@
 #include "Electrovalve.h"
 #include "Pumb.h"
 #include "Button.h"
+#include "FlowSensor.h"
 #include "Display.h"
 #include "Clock.h"
-
 class Controler{
     private:
     uint8_t state;
-    Electrovalve* E1;
-    Electrovalve* E2;
-    Electrovalve* E3;
+
+    Electrovalve** valves;      // Array de punteros a electroválvulas
+    Button** valveButtons;      // Array de punteros a sus botones
+    uint8_t numValves;          // Número total de válvulas
+    //Electrovalve* E1;
+    //Electrovalve* E2;
+    //Electrovalve* E3;
     Pumb* pumb;
+    FlowSensor* flowSensor;
     Button* ModeButton;
-    Button* E1Button;
-    Button* E2Button;
-    Button* E3Button;
+    //Button* E1Button;
+    //Button* E2Button;
+    //Button* E3Button;
     Display display;
     Clock clock;
     DateTime backLightTime;
@@ -28,7 +33,7 @@ class Controler{
     
     
     public:
-        Controler(Electrovalve* e1,Electrovalve* e2,Electrovalve* e3, Pumb* PUmb, Button* modeButton, Button* e1Button, Button* e4Button, Button* e3Button);
+        Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton);
         void checkIrrigation();
         void changeState();
         void setAuto();
@@ -38,6 +43,7 @@ class Controler{
         void checkButtons();
         void checkBackLight();
         void check();
+        void securityCheck();
         void init();
 
         

@@ -32,15 +32,12 @@ void Display::print(uint8_t X, uint8_t Y, const char* txt ){
     lcd.setCursor(X,Y);
     lcd.print(txt);
 };
-void Display::printE1(const char* txt){
-    print(pos_E1[0], pos_E1[1], txt);
-};
-void Display::printE2(const char* txt){
-    print(pos_E2[0], pos_E2[1], txt);
-};
-void Display::printE3(const char* txt){
-    print(pos_E3[0], pos_E3[1], txt);
-};
+
+void Display::printValveStatus(uint8_t index, char* text) {
+    // Ejemplo: cada válvula se imprime en una fila diferente o posición
+    print(pos_EV[0] + index * 3, pos_EV[1], text); // Ajusta la posición según el índice
+}
+
 void Display::printHour(const char* txt){
     print(pos_H[0],pos_H[1],txt);
 };

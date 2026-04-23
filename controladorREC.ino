@@ -28,6 +28,8 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Button E2Button(10);
   Button E3Button(11);
   Button ModeButton(8);
+
+  FlowSensor flowSensor(2, 7.5); // Pin 2, kFactor 7.5 (ajustar según el sensor)
   
 
   Program E1Programs[4] = { 
@@ -60,9 +62,15 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Electrovalve E2(&E2Programs[0], 6); // Usando E2Programs
   Electrovalve E3(&E3Programs[0], 7); // Usando E3Programs
 
+
+  // 3. Agruparlas en arrays (listas)
+  Electrovalve* listaValvulas[] = {&E1, &E2, &E3};
+  Button* listaBotones[] = {&E1Button, &E2Button, &E3Button};
+  uint8_t totalValvulas = 3;
+
   // 4. CORRECCIÓN: Nombre de clase 'Controller' debe coincidir con el include 'Controler.h'. 
   // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
-  Controler rec(&E1, &E2, &E3, &pumb, &ModeButton, &E1Button,&E2Button,&E3Button);
+  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton );
 
 void setup() {
   Serial.begin(9600);

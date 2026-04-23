@@ -2,9 +2,8 @@
 #include "Controler.h"
 #include "Electrovalve.h"
 
-static char printBuffer[3];
 
-Controler::Controler(Electrovalve* e1,Electrovalve* e2,Electrovalve* e3,  Pumb* PUmb, Button* modeButton, Button* e1Button, Button* e2Button, Button* e3Button):E1(e1),E2(e2),E3(e3),pumb(PUmb),ModeButton(modeButton),E1Button(e1Button),E2Button(E2Button),E3Button(e3Button),state(2),backLightDuration(2){
+Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), state(2), backLightDuration(2){
 };
 void Controler::setAuto(){
   state = 0;
@@ -51,29 +50,44 @@ void Controler::changeState(){
   };
 };
 void Controler::setBackLightTime(DateTime time){
-  Controler::setBackLightTime(time);
+  this->setBackLightTime(time);
   };
 
 void Controler::checkButtons(){
-  if ((E1Button->read()==LOW)&&(display.getBackLight())){
-    E1->changeState();
-    sprintf(printBuffer, "%s1", E1->getLabelState());
-    display.printE1(printBuffer);
-  };
-  if ((E2Button->read()==LOW)&&(display.getBackLight())){
-    E2->changeState();
-    sprintf(printBuffer, "%s2", E2->getLabelState());
-    display.printE2(printBuffer);
-  };
-  if ((E3Button->read()==LOW)&&(display.getBackLight())){
-    E3->changeState();
-    sprintf(printBuffer, "%s3", E3->getLabelState());
-    display.printE3(printBuffer);
-  };
-  if ((E1Button->read()==LOW)&&(E1Button->read()==LOW)&&(E1Button->read()==LOW)&&(!display.getBackLight())){
-    display.setON();
-    setBackLightTime(clock.now());
-  };
+  bool anyButtonPressed = false;
+    char printBuffer[20]; // Buffer para sprintf
+
+    // 1. Recorremos todas las válvulas con un bucle
+    for (uint8_t i = 0; i < numValves; i++) {
+        
+        // Comprobamos si el botón de la válvula 'i' está presionado
+        if (valveButtons[i]->read() == LOW) {
+            anyButtonPressed = true;
+
+            // Si la luz está encendida, ejecutamos la acción de la válvula
+            if (display.getBackLight()) {
+                valves[i]->changeState();
+
+                // Armamos el texto (ej: "ON 1", "OFF 2", etc.)
+                // Usamos i + 1 para que el usuario vea "Válvula 1" en vez de "Válvula 0"
+                sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
+
+                // ACTUALIZACIÓN DEL DISPLAY
+                // Aquí llamamos a una función genérica de tu clase Display
+                display.printValveStatus(i, printBuffer); 
+            }
+        }
+    }
+
+    // 2. Lógica del Backlight (Si se presiona CUALQUIER botón con la luz apagada)
+    if (anyButtonPressed && !display.getBackLight()) {
+        display.setON();
+        setBackLightTime(clock.now());
+        
+        // Opcional: Pequeño delay para evitar que el primer toque 
+        // también active la válvula accidentalmente
+        delay(200); 
+    }
 };
 
 void Controler::checkIrrigation(){
@@ -90,7 +104,7 @@ void Controler::check(){
   //Print estation
   display.printStation(clock.getStacion());
   
-  Controler::checkButtons();
-  Controler::checkBackLight();
-  Controler::checkIrrigation();
+  this->checkButtons();
+  this->checkBackLight();
+  this->checkIrrigation();
 };

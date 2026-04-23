@@ -11,9 +11,8 @@ class Display {
         // Posiciones de las variables en pantalla
         const uint8_t pos_E[2]  = {17, 0};
         const uint8_t pos_M[2]  = {7, 1};
-        const uint8_t pos_E1[2] = {12, 1};
-        const uint8_t pos_E2[2] = {15, 1};
-        const uint8_t pos_E3[2] = {18, 1};
+        const uint8_t pos_EV[2] = {12, 1};
+        
         const uint8_t pos_VA[2] = {11, 2};
         const uint8_t pos_D[2]  = {9, 3};
         const uint8_t pos_H[2]  = {14, 3}; // Hora
@@ -27,11 +26,9 @@ class Display {
         bool getBackLight();
         void printHour(const char* txt);
         void printStation(const char* txt);
-        void printE1(const char* txt);
-        void printE2(const char* txt);
-        void printE3(const char* txt);
+        
         void printDay(const char* txt);
         void printMode(const char* txt);
-        
+        void printValveStatus(uint8_t index, char* text);
 };
 #endif
