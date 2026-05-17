@@ -5,8 +5,11 @@
 #include "Controler.h"
 
 
-Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), state(2), backLightDuration(2){
+Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), state(2), backLightDuration(2){
 };
+Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), state(2), backLightDuration(2) {
+}
+
 void Controler::setAuto(){
   state = 0;
   display.printMode("AUTO");
@@ -22,7 +25,11 @@ void Controler::setStop(){
     display.printMode("STOP");
 };
 
-void Controler::init(){};
+void Controler::init(){
+    if (useKeypad && keypad != nullptr) {
+        keypad->init();
+    }
+};
 
 void Controler::checkBackLight(){
 if (display.getBackLight()){
@@ -92,6 +99,44 @@ void Controler::checkButtons(){
     }
 };
 
+void Controler::checkKeypad() {
+    char key = keypad->getKey();
+    if (key) {
+        // Lógica de Backlight: cualquier tecla lo enciende si está apagado
+        if (!display.getBackLight()) {
+            display.setON();
+            setBackLightTime(clock.now());
+            delay(200); // Pequeño delay para evitar ejecución accidental tras despertar
+            return; 
+        }
+
+        // Cambio de modo de trabajo (usamos '*' como botón de modo)
+        if (key == '*') {
+            changeState();
+            return;
+        }
+
+        // Control de electroválvulas (teclas '1' a '9')
+        if (key >= '1' && key <= '9') {
+            uint8_t i = key - '1';
+            if (i < numValves) {
+                valves[i]->changeState();
+                char printBuffer[20];
+                sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
+                display.printValveStatus(i, printBuffer);
+            }
+        }
+
+        // Soporte para válvula 10 con la tecla '0'
+        if (key == '0' && numValves >= 10) {
+            valves[9]->changeState();
+            char printBuffer[20];
+            sprintf(printBuffer, "%s%d", valves[9]->getLabelState(), 10);
+            display.printValveStatus(9, printBuffer);
+        }
+    }
+}
+
 void Controler::checkIrrigation(DateTime today){
   char printBuffer[20]; // Buffer para sprintf
   static uint32_t lastDisplayUpdate = 0;
@@ -157,7 +202,13 @@ void Controler::check(){
   //Print estation
   display.printStation(clock.getStacion());
   
-  this->checkButtons();
+  if (useKeypad) {
+      checkKeypad();
+  } else {
+      checkButtons();
+      // Lógica para el botón de modo físico si se usa el método tradicional
+      if (ModeButton != nullptr && ModeButton->read() == LOW) changeState();
+  }
   this->checkBackLight();
   this->checkIrrigation(today);
 };
