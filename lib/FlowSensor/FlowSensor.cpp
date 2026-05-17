@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "FlowSensor.h"
 
 // Inicializamos el puntero estático a nulo
@@ -22,15 +23,15 @@ void FlowSensor::handleInterrupt() {
   }
 }
 float FlowSensor::getInstantFlow() {
-  uint32_t currentTime = millis();
+  uint32_t currentTime = micros();
   uint32_t currentPulses;
   
   noInterrupts();
   currentPulses = _pulseCount;
   interrupts();
 
-  // Calcular tiempo transcurrido en segundos
-  float duration = (currentTime - _lastTime) / 1000.0;
+  // Calcular tiempo transcurrido en segundos (usando micros para más precisión)
+  float duration = (currentTime - _lastTime) / 1000000.0;
   if (duration <= 0) return 0;
 
   // Calcular pulsos en este intervalo

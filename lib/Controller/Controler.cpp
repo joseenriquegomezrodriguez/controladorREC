@@ -1,6 +1,8 @@
 //Controler.cpp
-#include "Controler.h"
+//
+#include <Arduino.h>
 #include "Electrovalve.h"
+#include "Controler.h"
 
 
 Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), state(2), backLightDuration(2){
@@ -50,8 +52,8 @@ void Controler::changeState(){
   };
 };
 void Controler::setBackLightTime(DateTime time){
-  this->setBackLightTime(time);
-  };
+  this->backLightTime = time;
+};
 
 void Controler::checkButtons(){
   bool anyButtonPressed = false;
@@ -90,10 +92,61 @@ void Controler::checkButtons(){
     }
 };
 
-void Controler::checkIrrigation(){
+void Controler::checkIrrigation(DateTime today){
+  char printBuffer[20]; // Buffer para sprintf
+  static uint32_t lastDisplayUpdate = 0;
+  uint32_t now = millis();
   
+  // Determine blink state (toggle every 500ms)
+  bool blinkVisible = (now / 500) % 2;
+  
+  // 1. Recorremos todas las válvulas con un bucle
+    for (uint8_t i = 0; i < numValves; i++) {
+      bool wasActive = valves[i]->isActive();
+      
+      valves[i]->check(today);
+
+      bool isNowActive = valves[i]->isActive();
+
+      // Detectar Inicio de Riego
+      if (!wasActive && isNowActive) {
+          valves[i]->setStartTime(today.unixtime());
+          pumb->setON();
+          flowSensor->reset();
+          valves[i]->setStartPulses(flowSensor->getPulses());
+      } 
+      // Detectar Fin de Riego
+      else if (wasActive && !isNowActive) {
+          uint32_t startT = valves[i]->getStartTime();
+          uint32_t endT = today.unixtime();
+          
+          // Calculamos la diferencia de pulsos y convertimos a litros
+          uint32_t totalPulses = flowSensor->getPulses() - valves[i]->getStartPulses();
+          // Usamos la misma fórmula que FlowSensor::getVolume() pero sobre el delta
+          uint16_t totalLiters = (uint16_t)(totalPulses / (7.5 * 60.0)); 
+          pumb->setOFF();
+          clock.saveLog(i + 1, totalLiters, startT, endT);
+      }
+      
+      // Only update the physical display every 200ms to save CPU and I2C bandwidth
+      if (now - lastDisplayUpdate >= 200) {
+          const char* stateLabel = valves[i]->getLabelState();
+          
+          // Implement blink: if state is not STOP ('X'), toggle visibility
+          if (stateLabel[0] != 'X' && !blinkVisible) {
+              sprintf(printBuffer, "  %d", i + 1); // Empty spaces to "blink" the label
+          } else {
+              sprintf(printBuffer, "%s%d", stateLabel, i + 1);
+          }
+          display.printValveStatus(i, printBuffer);
+      }
+    }
+    if (now - lastDisplayUpdate >= 200) lastDisplayUpdate = now;
 };
 void Controler::check(){
+  DateTime today = clock.now();
+  // Permite ajustar la hora via Serial si es necesario
+  clock.syncWithSerial();
 
   //Print hour
   display.printHour(clock.getHour());
@@ -106,5 +159,5 @@ void Controler::check(){
   
   this->checkButtons();
   this->checkBackLight();
-  this->checkIrrigation();
+  this->checkIrrigation(today);
 };

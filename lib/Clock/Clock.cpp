@@ -1,15 +1,16 @@
 //Clock.cpp
+#include <Arduino.h>
 #include "Clock.h"
 
 Clock::Clock(): _nextIndex(0), _isFull(false){
-    init();
+    // No llamar a init() aquí. Dejar que setup() lo haga.
 };
 
 bool Clock::init(){
   Serial.println(__DATE__);
   Serial.println(__TIME__);
   if (!RTC.begin()){
-    Serial.println("Couldn't find RTC");
+    Serial.println(F("Couldn't find RTC"));
     Serial.flush();
     while (1) delay(10);
     return false;
@@ -31,8 +32,8 @@ bool Clock::init(){
   return true;
 };
 
-void Clock::saveLog(uint8_t valve, uint16_t liters) {
-  LogEntry newLog = {RTC.now().unixtime(), liters, valve};
+void Clock::saveLog(uint8_t valve, uint16_t liters, uint32_t startT, uint32_t endT) {
+  LogEntry newLog = {startT, endT, liters, valve};
 
   // 1. Escribir en la posición actual
   uint16_t addr = _startDataAddr + (_nextIndex * sizeof(LogEntry));
@@ -52,7 +53,8 @@ void Clock::saveLog(uint8_t valve, uint16_t liters) {
 
 void Clock::saveError(uint8_t errorCode, uint16_t detail) {
   LogEntry errorLog;
-  errorLog.timestamp = RTC.now().unixtime();
+  errorLog.startTime = RTC.now().unixtime();
+  errorLog.endTime = errorLog.startTime;
   errorLog.valve = errorCode; // Aquí guardamos ERR_LEAK o ERR_DRY_RUN
   errorLog.liters = detail;    // Podemos guardar el caudal que detectamos
 
@@ -120,58 +122,95 @@ void Clock::readEEPROM(uint16_t address, byte* data, uint16_t len) {
   }
 }
 
+void Clock::syncWithSerial() {
+  if (Serial.available() > 0) {
+    char cmd = Serial.read(); // Leemos el primer carácter para identificar la acción
+
+    if (cmd == 'T' || cmd == 't') {
+      // Sincronización de hora. Formato: T2024,05,20,10,15,00
+      int year = Serial.parseInt();
+      if (year >= 2024) {
+        int month = Serial.parseInt();
+        int day = Serial.parseInt();
+        int hour = Serial.parseInt();
+        int minute = Serial.parseInt();
+        int second = Serial.parseInt();
+        
+        RTC.adjust(DateTime(year, month, day, hour, minute, second));
+        Serial.println(F(">> RTC sincronizado con éxito."));
+      }
+    } 
+    else if (cmd == 'L' || cmd == 'l') {
+      // Comando para volcar el historial de logs
+      dumpLogsToSerial();
+    }
+  }
+}
+
 char* Clock::getHour(){
   
   static char hourBuffer[6]; // 'static' ensures the memory persists after function ends
-  DateTime today = now();
+  DateTime today = RTC.now();
   sprintf(hourBuffer, "%02d:%02d", today.hour(), today.minute());
   return hourBuffer;
 };
 
 const char* Clock::getDayOfTheWeek(){
-  DateTime today = now();
+  DateTime today = RTC.now();
   return D[today.dayOfTheWeek()];
 };
 const char* Clock::getStacion(){
-  DateTime today = now();
+  DateTime today = RTC.now();
   return E[today.month()-1];
 };
 void Clock::dumpLogsToSerial() {
     uint16_t total = getCount();
-    Serial.println(F("\n--- INICIO VOLCADO EEPROM ---"));
-    Serial.print(F("Entradas encontradas: ")); Serial.println(total);
-    Serial.println(F("Fecha(Unix) | Valv/Err | Dato"));
-    Serial.println(F("--------------------------------"));
+    Serial.println(F("\n--- HISTORIAL DE RIEGOS Y ERRORES ---"));
+    Serial.print(F("Registros encontrados: ")); Serial.println(total);
+    Serial.println(F("Fecha      | Inicio | Fin   | Durac. | ID   | Consumo"));
+    Serial.println(F("-----------|--------|-------|--------|------|---------"));
 
     for (uint16_t i = 0; i < total; i++) {
         LogEntry entry = getLog(i);
         
-        DateTime d(entry.timestamp); // Convertimos el Unix time a objeto DateTime
+        DateTime start(entry.startTime);
+        DateTime end(entry.endTime);
+        uint32_t durationSeconds = entry.endTime - entry.startTime;
 
         // Imprimir Fecha: DD/MM/AAAA
-        Serial.print(d.day()); Serial.print('/');
-        Serial.print(d.month()); Serial.print('/');
-        Serial.print(d.year()); Serial.print(F(" "));
-
-        // Imprimir Hora: HH:MM
-        if(d.hour() < 10) Serial.print('0');
-        Serial.print(d.hour()); Serial.print(':');
-        if(d.minute() < 10) Serial.print('0');
-        Serial.print(d.minute());
-
+        if(start.day() < 10) Serial.print('0');
+        Serial.print(start.day()); Serial.print('/');
+        if(start.month() < 10) Serial.print('0');
+        Serial.print(start.month()); Serial.print('/');
+        Serial.print(start.year());
         Serial.print(F(" | "));
+
+        // Hora Inicio
+        if(start.hour() < 10) Serial.print('0');
+        Serial.print(start.hour()); Serial.print(':');
+        if(start.minute() < 10) Serial.print('0');
+        Serial.print(start.minute());
+        Serial.print(F("  | "));
+
+        // Hora Fin
+        if(end.hour() < 10) Serial.print('0');
+        Serial.print(end.hour()); Serial.print(':');
+        if(end.minute() < 10) Serial.print('0');
+        Serial.print(end.minute());
+        Serial.print(F(" | "));
+
+        // Duración (ej: 120s)
+        Serial.print(durationSeconds); Serial.print(F("s"));
+        Serial.print(F("\t | "));
         
-        // Si el valor es muy alto (ej: > 200), asumimos que es un código de error
-        if (entry.valve >= 200) {
-            Serial.print(F("ERROR: "));
-        } else {
-            Serial.print(F("Válvula: "));
-        }
+        // Identificador (Válvula o Error)
+        if (entry.valve == ERR_LEAK) Serial.print(F("FUGA "));
+        else if (entry.valve == ERR_DRY_RUN) Serial.print(F("SECO "));
+        else { Serial.print(F("VAL")); Serial.print(entry.valve); }
         
-        Serial.print(entry.valve);
         Serial.print(F(" | "));
         Serial.print(entry.liters);
-        Serial.println(F(" units"));
+        Serial.println(F(" L"));
     }
-    Serial.println(F("--- FIN DEL VOLCADO ---\n"));
+    Serial.println(F("----------------------------------------------------\n"));
 };

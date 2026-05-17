@@ -4,11 +4,12 @@
 #include <Arduino.h>
 #include <RTClib.h>
 
-// Estructura optimizada (7 bytes totales)
+// Estructura (11 bytes totales)
 struct LogEntry {
-  uint32_t timestamp; // 4 bytes
+  uint32_t startTime; // 4 bytes
+  uint32_t endTime;   // 4 bytes
   uint16_t liters;    // 2 bytes
-  uint8_t valve;      // 1 byte
+  uint8_t valve;      // 1 byte (ID de válvula o código de error)
 };
 // Códigos de error especiales para el campo 'valve'
 #define ERR_LEAK    255  // Fuga (flujo sin válvula abierta)
@@ -25,7 +26,7 @@ class Clock {
         const uint16_t _fullFlagAddr = 2;  // Indica si ya se llenó una vez (1 byte)
         const uint16_t _startDataAddr = 4; // Inicio de los registros
     
-        const uint16_t _maxEntries = 580;  // Límite para no exceder los 4KB de la AT24C32
+        const uint16_t _maxEntries = 370;  // Ajustado para 11 bytes por entrada (4070 bytes)
     
         uint16_t _nextIndex;
         bool _isFull;
@@ -40,7 +41,7 @@ class Clock {
         const char* getDayOfTheWeek();
         const char* getStacion();
         // Guardar nuevo riego
-        void saveLog(uint8_t valve, uint16_t liters);
+        void saveLog(uint8_t valve, uint16_t liters, uint32_t startT, uint32_t endT);
         void saveError(uint8_t errorCode, uint16_t detail);
         // Recuperar por índice relativo (0 es el más antiguo, total-1 el más nuevo)
         LogEntry getLog(uint16_t logicalIndex);
@@ -48,6 +49,7 @@ class Clock {
         uint16_t getCount(); // Cuántos registros válidos hay realmente
         void clearMemory();
         void dumpLogsToSerial();   
+        void syncWithSerial(); // Declaración de la nueva función
         DateTime now() { return RTC.now(); }
 };
 #endif

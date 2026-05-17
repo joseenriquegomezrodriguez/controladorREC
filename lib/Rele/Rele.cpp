@@ -1,7 +1,8 @@
 //Rele.cpp
+#include <Arduino.h>
 #include "Rele.h"
 
-Rele::Rele(uint8_t Pin,bool Status):pin(Pin),status(Status){
+Rele::Rele(uint8_t Pin,bool Status):status(Status),pin(Pin){
 
 };
 void Rele::init(){

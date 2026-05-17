@@ -1,0 +1,89 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "/home/jgomez/github/controladorREC/src",
+                "/home/jgomez/github/controladorREC/lib/Controller",
+                "/home/jgomez/github/controladorREC/lib/Display",
+                "/home/jgomez/github/controladorREC/lib/Clock",
+                "/home/jgomez/github/controladorREC/lib/FlowSensor",
+                "/home/jgomez/github/controladorREC/lib/Pumb",
+                "/home/jgomez/github/controladorREC/lib/Button",
+                "/home/jgomez/github/controladorREC/lib/Electrovalve",
+                "/home/jgomez/github/controladorREC/lib/Program",
+                "/home/jgomez/github/controladorREC/lib/Frame",
+                "/home/jgomez/github/controladorREC/lib/Rele",
+                "/home/jgomez/github/controladorREC/.pio/libdeps/uno/Unity/src",
+                "/home/jgomez/github/controladorREC/.pio/libdeps/uno/RTClib/src",
+                "/home/jgomez/github/controladorREC/.pio/libdeps/uno/Adafruit BusIO",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                "/home/jgomez/github/controladorREC/.pio/libdeps/uno/LiquidCrystal_I2C",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                "/home/jgomez/github/controladorREC/include",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/variants/standard",
+                "/home/jgomez/github/controladorREC/lib/SoilSensor",
+                "/home/jgomez/github/controladorREC/lib/THSensor",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/home/jgomez/github/controladorREC/src",
+                    "/home/jgomez/github/controladorREC/lib/Controller",
+                    "/home/jgomez/github/controladorREC/lib/Display",
+                    "/home/jgomez/github/controladorREC/lib/Clock",
+                    "/home/jgomez/github/controladorREC/lib/FlowSensor",
+                    "/home/jgomez/github/controladorREC/lib/Pumb",
+                    "/home/jgomez/github/controladorREC/lib/Button",
+                    "/home/jgomez/github/controladorREC/lib/Electrovalve",
+                    "/home/jgomez/github/controladorREC/lib/Program",
+                    "/home/jgomez/github/controladorREC/lib/Frame",
+                    "/home/jgomez/github/controladorREC/lib/Rele",
+                    "/home/jgomez/github/controladorREC/.pio/libdeps/uno/Unity/src",
+                    "/home/jgomez/github/controladorREC/.pio/libdeps/uno/RTClib/src",
+                    "/home/jgomez/github/controladorREC/.pio/libdeps/uno/Adafruit BusIO",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                    "/home/jgomez/github/controladorREC/.pio/libdeps/uno/LiquidCrystal_I2C",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                    "/home/jgomez/github/controladorREC/include",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/cores/arduino",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/variants/standard",
+                    "/home/jgomez/github/controladorREC/lib/SoilSensor",
+                    "/home/jgomez/github/controladorREC/lib/THSensor",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                    "/home/jgomez/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=60119",
+                "ARDUINO_AVR_UNO",
+                "F_CPU=16000000L",
+                "ARDUINO_ARCH_AVR",
+                "ARDUINO=10808",
+                "UNITY_INCLUDE_CONFIG_H",
+                "__AVR_ATmega328P__",
+                ""
+            ],
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++11",
+            "compilerPath": "/home/jgomez/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
+            "compilerArgs": [
+                "-mmcu=atmega328p",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}

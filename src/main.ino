@@ -2,11 +2,16 @@
 #include <Arduino.h>
 #include <RTClib.h> // Necesario para DateTime
 #include "Controler.h"
+#include "Display.h"
+#include "Clock.h"
 #include "Frame.h"
 #include "Electrovalve.h"
 #include "Program.h"
 #include "Pumb.h"
 #include "Button.h"
+
+Display display;
+Clock clock;
 
 // Definiciones de arrays de días fijos (necesario si Program espera un const uint8_t days[])
 const uint8_t NO_DAYS[7] = {0, 0, 0, 0, 0, 0, 0};
@@ -73,13 +78,28 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton );
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Init Serial at 9600");
+  Serial.begin(115200);
+  Serial.println(F("Sistema de Riego Iniciado a 115200 baud"));
+  Serial.println(F("Envíe 'd' para volcar los logs de la EEPROM"));
+  
   rec.init(); 
-
+  display.init();
+  clock.init();
 }
 
 void loop() {
-  delay(1000);
+  // Procesar comandos del monitor serie
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+    if (command == 'd' || command == 'D') {
+      clock.dumpLogsToSerial();
+    } else if (command == 'c' || command == 'C') {
+      Serial.println(F("Limpiando memoria de logs..."));
+      clock.clearMemory();
+      Serial.println(F("Memoria borrada."));
+    }
+  }
+
   rec.check(); 
+  delay(100); // Reducido el delay para mejorar la respuesta de botones/serial
 }

@@ -1,7 +1,8 @@
 //Program.cpp
+#include <Arduino.h>
 #include "Program.h"
 #include <RTClib.h>
-#include <Arduino.h>
+
 
 
 Program::Program(uint8_t Hour,uint8_t Duration, const uint8_t* Days, Frame* FRame ) : hour(Hour),duration(Duration), frame(FRame) {
@@ -32,5 +33,16 @@ Frame* Program::getFrame(){
     return frame;
 };
 bool Program::inTimeFrame(DateTime date){
-    return false;
+    uint8_t dayOfWeek = date.dayOfTheWeek(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    uint8_t currentHour = date.hour();
+    uint8_t currentMinute = date.minute();
+
+    if (days[dayOfWeek] != 1) return false;
+
+    // Calculamos minutos totales desde las 00:00 para manejar duraciones largas
+    uint16_t startTotalMinutes = (uint16_t)hour * 60;
+    uint16_t currentTotalMinutes = (uint16_t)currentHour * 60 + currentMinute;
+    uint16_t endTotalMinutes = startTotalMinutes + duration;
+
+    return (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes < endTotalMinutes);
 };

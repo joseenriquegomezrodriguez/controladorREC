@@ -1,9 +1,10 @@
 //Display.cpp
+#include <Arduino.h>
 #include "Display.h"
 
 Display::Display(): lcd(0x27, 20, 4){
-    
-    Display::init();
+    // No llamar a init() aquí. Dejar que setup() lo haga.
+    // Esto asegura que Wire.begin() se haya ejecutado primero.
 };
 void Display::setON(){
     lcd.backlight();
@@ -16,13 +17,13 @@ void Display::setOFF(){
 void Display::init(){
     Display::setON();
     lcd.setCursor(0,0);
-    lcd.print("CONTROL DE REG E:xxx");
+    lcd.print(F("CONTROL DE REG E:xxx"));
     lcd.setCursor(0,1);
-    lcd.print("T:xx M:xxxx E1 E2 E3");
+    lcd.print(F("T:xx M:xxxx E1 E2 E3"));
     lcd.setCursor(0,2);
-    lcd.print("HT:xxxx VA:xx.xL/min");
+    lcd.print(F("HT:xxxx VA:xx.xL/min"));
     lcd.setCursor(0,3);
-    lcd.print("HA:xx% D:xx H:");
+    lcd.print(F("HA:xx% D:xx H:"));
 
 };
 bool Display::getBackLight(){

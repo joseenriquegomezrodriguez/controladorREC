@@ -15,12 +15,12 @@ class FlowSensor {
     
     static FlowSensor* _instance; // Puntero para la interrupción
 
-    // Manejador de interrupción (estático)
-    static void handleInterrupt();
-
   public:
     // Constructor
     FlowSensor(uint8_t pin, float kFactor = 7.5);
+
+    // Manejador de interrupción (estático) - Público para permitir simulación en tests
+    static void handleInterrupt();
 
     void begin();
     void reset();          // Pone el contador a cero para un nuevo riego

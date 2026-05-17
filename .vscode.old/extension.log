@@ -1,0 +1,82 @@
+
+======================================================================
+[2026-04-23 13:59:29.009] Arduino Extension 启动 (v0.2.1)
+  平台: linux x64
+  VS Code: 1.116.0
+  Node: v22.22.1
+======================================================================
+[2026-04-23 13:59:29.010][INFO] 板卡缓存目录: /home/jgomez/.config/Code/User/globalStorage/oakiot.vscode-arduino-cli
+[2026-04-23 13:59:29.011][INFO] [BoardListHistory] 已初始化，加载了 0 个板卡记录，0 个端口记录
+[2026-04-23 13:59:29.011][INFO] [BuildOutputWebview] 编译日志缓存路径: /home/jgomez/github/controladorREC/.vscode/build-output.log
+[2026-04-23 13:59:29.012][INFO] 刷新板卡列表...
+[2026-04-23 13:59:29.012][INFO] 获取板卡列表...
+[2026-04-23 13:59:29.013][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.029][INFO] 刷新板卡管理器...
+[2026-04-23 13:59:29.030][INFO] 创建板卡缓存目录: /home/jgomez/.config/Code/User/globalStorage/oakiot.vscode-arduino-cli
+[2026-04-23 13:59:29.031][INFO] 获取已安装的平台列表...
+[2026-04-23 13:59:29.031][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.049][INFO] 获取已安装库列表...
+[2026-04-23 13:59:29.049][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.081][INFO] 已注册调试命令
+[2026-04-23 13:59:29.081][INFO] 正在检测 Arduino CLI...
+[2026-04-23 13:59:29.082][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.099][INFO] Arduino CLI 插件激活完成
+[2026-04-23 13:59:29.103][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.104][INFO] 开始自动检测 Arduino CLI...
+[2026-04-23 13:59:29.104][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.124][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.125][INFO] 开始自动检测 Arduino CLI...
+[2026-04-23 13:59:29.125][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.144][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.145][INFO] 开始自动检测 Arduino CLI...
+[2026-04-23 13:59:29.145][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.162][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.162][INFO] 开始自动检测 Arduino CLI...
+[2026-04-23 13:59:29.162][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.193][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.193][WARN] 未能自动检测到 Arduino CLI
+[2026-04-23 13:59:29.193][ERROR] 获取板卡列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-04-23 13:59:29.194][INFO] 获取所有已安装的板卡...
+[2026-04-23 13:59:29.194][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.214][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.214][WARN] 未能自动检测到 Arduino CLI
+[2026-04-23 13:59:29.214][ERROR] 获取平台列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-04-23 13:59:29.215][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.215][WARN] 未能自动检测到 Arduino CLI
+[2026-04-23 13:59:29.215][ERROR] 获取已安装库列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-04-23 13:59:29.215][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.216][WARN] 未能自动检测到 Arduino CLI
+[2026-04-23 13:59:29.216][WARN] Arduino CLI 未找到
+[2026-04-23 13:59:29.225][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.226][INFO] 开始自动检测 Arduino CLI...
+[2026-04-23 13:59:29.226][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-04-23 13:59:29.252][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: 1: arduino-cli: not found
+
+[2026-04-23 13:59:29.253][WARN] 未能自动检测到 Arduino CLI
+[2026-04-23 13:59:29.253][ERROR] 获取板卡列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-04-23 13:59:29.253][INFO] 加载了 0 个平台，共 0 个板卡
+[2026-04-23 14:01:40.489][INFO] Arduino CLI 插件正在停用...
+[2026-04-23 14:01:40.489][INFO] 串口监视器(Terminal)已释放
+[2026-04-23 14:01:40.489][INFO] 串口监视器(WebView)已释放
+[2026-04-23 14:01:40.490][INFO] [BoardDiscovery] 释放资源...
+[2026-04-23 14:01:40.490][INFO] [BoardDiscovery] 资源已释放
+[2026-04-23 14:01:40.490][INFO] Arduino Extension 关闭
+──────────────────────────────────────────────────────────────────────
+[2026-04-23 14:01:40.560][FATAL] [Global] 未捕获的异常: Channel has been closed
+  Stack: Error: Channel has been closed
+	at r (file:///usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:508:3935)
+	at Object.info (file:///usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:508:4305)
+	at WT.info (/usr/share/code/resources/app/extensions/json-language-features/client/dist/node/jsonClientMain.js:14:709)
+	at ChildProcess.<anonymous> (/usr/share/code/resources/app/extensions/json-language-features/client/dist/node/jsonClientMain.js:19:48759)
+	at ChildProcess.emit (node:events:519:28)
+	at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+	at Process.callbackTrampoline (node:internal/async_hooks:130:17)
