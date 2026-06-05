@@ -11,16 +11,16 @@ Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowS
 }
 
 void Controler::setAuto(){
-  state = 0;
+  state = 1;
   display.printMode("AUTO");
 };
 void Controler::setManual(){
-    state = 1;
+    state = 2;
     pumb->setON();
     display.printMode("MANU");
 };
 void Controler::setStop(){
-    state = 2;
+    state = 0;
     pumb->setOFF();
     display.printMode("STOP");
 };
@@ -44,16 +44,16 @@ if (display.getBackLight()){
 
 void Controler::changeState(){
   switch (state) {
-    case 0: {
+    case 0: { // De STOP a AUTO
+        setAuto();
+        return;
+      }
+      case 1: { // De AUTO a MANUAL
         setManual();
         return;
       }
-      case 1: {
+      case 2: { // De MANUAL a STOP
         setStop();
-        return;
-      }
-      case 2: {
-        setAuto();
         return;
       }
   };
@@ -65,20 +65,21 @@ void Controler::setBackLightTime(DateTime time){
 void Controler::checkButtons(){
   bool anyButtonPressed = false;
     char printBuffer[20]; // Buffer para sprintf
+    static bool lastValveBtnStates[10] = {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH};
 
     // 1. Recorremos todas las válvulas con un bucle
     for (uint8_t i = 0; i < numValves; i++) {
+        bool currentBtnState = valveButtons[i]->read();
         
-        // Comprobamos si el botón de la válvula 'i' está presionado
-        if (valveButtons[i]->read() == LOW) {
+        // Detectamos el flanco de bajada (de HIGH a LOW) con resistencia Pull-up
+        if (currentBtnState == LOW && lastValveBtnStates[i] == HIGH) {
             anyButtonPressed = true;
+            delay(50); // Anti-rebote (Debounce) hardware
 
             // Si la luz está encendida, ejecutamos la acción de la válvula
             if (display.getBackLight()) {
                 valves[i]->changeState();
-
-                // Armamos el texto (ej: "ON 1", "OFF 2", etc.)
-                // Usamos i + 1 para que el usuario vea "Válvula 1" en vez de "Válvula 0"
+                
                 sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
 
                 // ACTUALIZACIÓN DEL DISPLAY
@@ -86,6 +87,7 @@ void Controler::checkButtons(){
                 display.printValveStatus(i, printBuffer); 
             }
         }
+        lastValveBtnStates[i] = currentBtnState;
     }
 
     // 2. Lógica del Backlight (Si se presiona CUALQUIER botón con la luz apagada)
@@ -140,23 +142,33 @@ void Controler::checkKeypad() {
 void Controler::checkIrrigation(DateTime today){
   char printBuffer[20]; // Buffer para sprintf
   static uint32_t lastDisplayUpdate = 0;
+  bool anyActive = false; 
   uint32_t now = millis();
   
   // Determine blink state (toggle every 500ms)
   bool blinkVisible = (now / 500) % 2;
+
+  // Actualizar caudal una sola vez por ciclo de refresco
+  if (now - lastDisplayUpdate >= 200) {
+      display.printFlow(flowSensor->getInstantFlow());
+  }
   
   // 1. Recorremos todas las válvulas con un bucle
     for (uint8_t i = 0; i < numValves; i++) {
       bool wasActive = valves[i]->isActive();
       
-      valves[i]->check(today);
+      // Si el controlador está en STOP (0), forzamos el cierre de la válvula
+      if (state == 0) {
+          valves[i]->setOFF();
+      } else {
+          valves[i]->check(today);
+      }
 
       bool isNowActive = valves[i]->isActive();
 
       // Detectar Inicio de Riego
       if (!wasActive && isNowActive) {
           valves[i]->setStartTime(today.unixtime());
-          pumb->setON();
           flowSensor->reset();
           valves[i]->setStartPulses(flowSensor->getPulses());
       } 
@@ -169,45 +181,70 @@ void Controler::checkIrrigation(DateTime today){
           uint32_t totalPulses = flowSensor->getPulses() - valves[i]->getStartPulses();
           // Usamos la misma fórmula que FlowSensor::getVolume() pero sobre el delta
           uint16_t totalLiters = (uint16_t)(totalPulses / (7.5 * 60.0)); 
-          pumb->setOFF();
           clock.saveLog(i + 1, totalLiters, startT, endT);
       }
       
-      // Only update the physical display every 200ms to save CPU and I2C bandwidth
+      if (isNowActive) anyActive = true;
+      
       if (now - lastDisplayUpdate >= 200) {
-          const char* stateLabel = valves[i]->getLabelState();
-          
-          // Implement blink: if state is not STOP ('X'), toggle visibility
-          if (stateLabel[0] != 'X' && !blinkVisible) {
-              sprintf(printBuffer, "  %d", i + 1); // Empty spaces to "blink" the label
+          // Implement blink: if valve is active, toggle visibility
+          if (valves[i]->isActive() && !blinkVisible) {
+              sprintf(printBuffer, "  "); // Borra solo la posición de esa válvula
           } else {
-              sprintf(printBuffer, "%s%d", stateLabel, i + 1);
+              sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
           }
           display.printValveStatus(i, printBuffer);
       }
     }
+
+    // Control maestro de la bomba respetando el estado del controlador
+    if (state == 0) {
+        pumb->setOFF(); // STOP: Bomba siempre apagada
+    } else if (state == 2) {
+        pumb->setON();  // MANUAL: Bomba siempre encendida (según tu setManual)
+    } else {
+        // AUTO: La bomba depende de si hay válvulas abiertas
+        if (anyActive) pumb->setON(); else pumb->setOFF();
+    }
+
     if (now - lastDisplayUpdate >= 200) lastDisplayUpdate = now;
 };
 void Controler::check(){
   DateTime today = clock.now();
+  uint32_t now = millis();
+  static uint32_t lastSlowUpdate = 0;
+
   // Permite ajustar la hora via Serial si es necesario
   clock.syncWithSerial();
 
-  //Print hour
-  display.printHour(clock.getHour());
-
-  //Print dayOfTheWeek
-  display.printDay(clock.getDayOfTheWeek());
-  
-  //Print estation
-  display.printStation(clock.getStacion());
+  // Actualizar información estática/lenta solo cada 1 segundo para evitar saturar el I2C
+  if (now - lastSlowUpdate >= 1000) {
+      display.printHour(clock.getHour());
+      display.printDay(clock.getDayOfTheWeek());
+      display.printStation(clock.getStacion());
+      lastSlowUpdate = now;
+  }
   
   if (useKeypad) {
       checkKeypad();
   } else {
-      checkButtons();
-      // Lógica para el botón de modo físico si se usa el método tradicional
-      if (ModeButton != nullptr && ModeButton->read() == LOW) changeState();
+     checkButtons();
+      // Lógica para el botón de modo físico con detección de flanco e inversión
+      if ((ModeButton != nullptr)&&(display.getBackLight())) {
+          static bool lastModeBtnState = HIGH;
+          bool currentModeState = ModeButton->read();
+          if (currentModeState == LOW && lastModeBtnState == HIGH) changeState();
+          lastModeBtnState = currentModeState;
+      }
+      if ((ModeButton != nullptr) && !display.getBackLight()) {
+        display.setON();
+        setBackLightTime(clock.now());
+        
+        // Opcional: Pequeño delay para evitar que el primer toque 
+        // también active la válvula accidentalmente
+        delay(200); 
+    }
+
   }
   this->checkBackLight();
   this->checkIrrigation(today);

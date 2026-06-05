@@ -81,19 +81,10 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("Sistema de Riego Iniciado a 115200 baud"));
   Serial.println(F("Envíe 'd' para volcar los logs de la EEPROM"));
-  E1Button.init();
-  E2Button.init();
-  E3Button.init();
-  ModeButton.init();
-  E1.init();
-  E2.init();
-  E3.init();
-  pumb.init();
-  flowSensor.begin();
+  
+  rec.init(); 
   display.init();
   clock.init();
-  rec.init(); 
-  
 }
 
 void loop() {
@@ -108,7 +99,7 @@ void loop() {
       Serial.println(F("Memoria borrada."));
     }
   }
- 
+
   rec.check(); 
   delay(100); // Reducido el delay para mejorar la respuesta de botones/serial
 }

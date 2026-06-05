@@ -200,7 +200,7 @@ void Clock::dumpLogsToSerial() {
         Serial.print(F(" | "));
 
         // Duración (ej: 120s)
-        Serial.print(durationSeconds); Serial.print(F("s"));
+        Serial.print(durationSeconds/60); Serial.print(F("m"));
         Serial.print(F("\t | "));
         
         // Identificador (Válvula o Error)

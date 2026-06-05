@@ -12,11 +12,12 @@ class Electrovalve : public Rele{
         uint8_t state;
         uint32_t _startTime;
         uint32_t _startPulses;
-        const char labelState[3][3]={"X","A","M"};
+        const char labelState[3][3]={"X","E","M"};
     public:
         Electrovalve(Program* Programs, uint8_t relePin);
         void check(DateTime date);
         void changeState();
+        uint8_t getState() { return state; }
         const char* getLabelState();
         bool isActive() { return getStatus(); }
         void setStartTime(uint32_t t) { _startTime = t; }

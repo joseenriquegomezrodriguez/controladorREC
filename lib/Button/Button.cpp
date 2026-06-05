@@ -7,6 +7,7 @@ Button::Button(uint8_t Pin) : pin(Pin){
 }
 
 void Button::init(){
+    // Configuramos el pin para usar la resistencia pull-up interna del Arduino
     pinMode(pin, INPUT_PULLUP);
 };
 int Button::read(){

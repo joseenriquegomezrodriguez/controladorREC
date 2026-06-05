@@ -15,6 +15,8 @@ void Display::setOFF(){
     backLight = false;
 };
 void Display::init(){
+    lcd.init();                      // Inicializa el hardware del LCD
+    lcd.clear();                     // Limpia cualquier residuo en la memoria del LCD
     Display::setON();
     lcd.setCursor(0,0);
     lcd.print(F("CONTROL DE REG E:xxx"));
@@ -35,19 +37,39 @@ void Display::print(uint8_t X, uint8_t Y, const char* txt ){
 };
 
 void Display::printValveStatus(uint8_t index, char* text) {
-    // Ejemplo: cada válvula se imprime en una fila diferente o posición
-    print(pos_EV[0] + index * 3, pos_EV[1], text); // Ajusta la posición según el índice
+    // Calculamos la columna inicial
+    uint8_t col = pos_EV[0] + (index * 3);
+    uint8_t row = pos_EV[1];
+
+    // Si la columna excede el límite del LCD (20 caracteres), 
+    // debemos manejar el salto de línea manualmente para que no sea errático
+    if (col >= 20) {
+        // Ejemplo: Si tienes más de 2-3 válvulas, podrías querer 
+        // mover las siguientes a la línea 2 (índice 2)
+        // Por ahora, esto evita que el hardware decida por ti:
+        col = (index - 3) * 3; // Empezar desde la izquierda para la válvula 4
+        row = 2;               // Mover a la fila 2 (tercera línea)
+        // Nota: Esto requeriría que tu layout en init() deje espacio en la línea 2
+    }
+
+    print(col, row, text);
 }
 
 void Display::printHour(const char* txt){
-    print(pos_H[0],pos_H[1],txt);
+    print(pos_H[0], pos_H[1], txt);
 };
 void Display::printDay(const char* txt){
-    print(pos_D[0],pos_D[1],txt);
+    print(pos_D[0], pos_D[1], txt);
 };
 void Display::printStation(const char* txt){
-    print(pos_E[0],pos_E[1],txt);
+    print(pos_E[0], pos_E[1], txt);
 };
 void Display::printMode(const char* txt){
-    print(pos_M[0],pos_M[1],txt);
+    print(pos_M[0], pos_M[1], txt);
 };
+
+void Display::printFlow(float flow) {
+    char buffer[6];
+    dtostrf(flow, 4, 1, buffer); // Formato "xx.x" (4 caracteres)
+    print(pos_VA[0], pos_VA[1], buffer);
+}

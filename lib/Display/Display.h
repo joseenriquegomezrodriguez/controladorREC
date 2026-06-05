@@ -30,5 +30,6 @@ class Display {
         void printDay(const char* txt);
         void printMode(const char* txt);
         void printValveStatus(uint8_t index, char* text);
+        void printFlow(float flow);
 };
 #endif

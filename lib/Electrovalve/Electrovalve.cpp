@@ -20,22 +20,11 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
 };
 
 void Electrovalve::changeState(){
-  switch (state) {
-    case 0: { // En caso de estar en STOP, se cambia a AUTO
-        state = 1;
-        return;
-      }
-    case 1: { //En caso de estar en AUTO, se cambia a MANUAL 
-        state =2;
-        setON();
-        return;
-      }
-      case 2: { //En caso de estar en MANUAL, se cambia a STOP
-        state = 0;
-        setOFF();
-        return;
-      }
-  };
+  state = (state + 1) % 3; // Ciclo: 0(X) -> 1(E) -> 2(M) -> 0(X)
+  
+  // Acciones inmediatas al cambiar de modo
+  if (state == 2) setON();  // Manual: Abrir ya
+  if (state == 0) setOFF(); // Stop: Cerrar ya
 };
 
 const char* Electrovalve::getLabelState(){
