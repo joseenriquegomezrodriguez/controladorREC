@@ -80,3 +80,17 @@ void Display::printSoilMoisture(int soilMoisture) {
     print(pos_HT[0], pos_HT[1], clearBuffer); // Limpia el espacio antes de imprimir el nuevo valor
     print(pos_HT[0], pos_HT[1], buffer);    // Imprime en la esquina superior izquierda de
 };
+void Display::printHumidity(int humidity) {
+    char buffer[5];
+    char clearBuffer[] = "    "; // El compilador asigna automáticamente el tamaño necesario (5 bytes)
+    snprintf(buffer, sizeof(buffer), "%d%%", humidity);
+    print(pos_HA[0], pos_HA[1], clearBuffer); // Limpia el espacio antes de imprimir el nuevo valor
+    print(pos_HA[0], pos_HA[1], buffer);
+};
+void Display::printTemperature(int temperature) {
+    char buffer[5];
+    char clearBuffer[] = "  "; // El compilador asigna automáticamente el tamaño necesario (5 bytes)
+    snprintf(buffer, sizeof(buffer), "%d", temperature);
+    print(pos_T[0], pos_T[1], clearBuffer); // Limpia el espacio antes de imprimir el nuevo valor
+    print(pos_T[0], pos_T[1], buffer);
+};

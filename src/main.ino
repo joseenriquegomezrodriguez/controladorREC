@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include <RTClib.h> // Necesario para DateTime
+#include <DHT.h>
 #include "Controler.h"
 #include "Display.h"
 #include "Clock.h"
@@ -15,6 +16,8 @@
 Display display;
 Clock clock;
 SoilSensor soilSensor(A0); // Sensor de humedad conectado al pin A0
+DHT dht(3, DHT11); 
+THSensor thSensor(dht); // Sensor de temperatura y humedad conectado al pin 3
 
 // Definiciones de arrays de días fijos (necesario si Program espera un const uint8_t days[])
 const uint8_t NO_DAYS[7] = {0, 0, 0, 0, 0, 0, 0};
@@ -78,7 +81,7 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
 
   // 4. CORRECCIÓN: Nombre de clase 'Controller' debe coincidir con el include 'Controler.h'. 
   // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
-  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor);
+  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor, &thSensor);
 
 void setup() {
   Serial.begin(115200);

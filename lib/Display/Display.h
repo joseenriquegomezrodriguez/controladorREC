@@ -17,6 +17,8 @@ class Display {
         const uint8_t pos_D[2]  = {9, 3};
         const uint8_t pos_H[2]  = {14, 3}; // Hora
         const uint8_t pos_HT[2] = {3, 2};  // Humedad del suelo (Soil Moisture)
+        const uint8_t pos_T[2] = {2, 1};
+        const uint8_t pos_HA[2] = {3, 3}; 
         void print(uint8_t X, uint8_t Y,const char* txt);
        
     public:
@@ -28,7 +30,8 @@ class Display {
         void printHour(const char* txt);
         void printStation(const char* txt);
         void printSoilMoisture(int soilMoisture);
-                
+        void printHumidity(int humidity);
+        void printTemperature(int temperature);
         void printDay(const char* txt);
         void printMode(const char* txt);
         void printValveStatus(uint8_t index, char* text);

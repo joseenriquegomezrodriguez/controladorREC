@@ -5,9 +5,9 @@
 #include "Controler.h"
 
 
-Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), state(2), backLightDuration(2){
+Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2){
 };
-Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(nullptr), state(2), backLightDuration(2) {
+Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2) {
 };
 
 void Controler::setAuto(){
@@ -28,6 +28,9 @@ void Controler::setStop(){
 void Controler::init(){
     if (useKeypad && keypad != nullptr) {
         keypad->init();
+    }
+    if (thSensor != nullptr) {
+        thSensor->init();
     }
     printHelp();
 };
@@ -273,11 +276,6 @@ void Controler::check(){
   uint32_t now = millis();
   static uint32_t lastSlowUpdate = 0;
 
-  if (soilSensor != nullptr) {
-    int soilMoisture = soilSensor->read();
-    display.printSoilMoisture(soilMoisture);
-  }
-
   // Procesar comandos recibidos por puerto serie
   checkCmds();
 
@@ -286,6 +284,14 @@ void Controler::check(){
       display.printHour(clock.getHour());
       display.printDay(clock.getDayOfTheWeek());
       display.printStation(clock.getStacion());
+      if (soilSensor != nullptr) {
+          display.printSoilMoisture(soilSensor->read());
+      }
+      if (thSensor != nullptr) {
+          // Se asume que THSensor implementa los métodos estándar de la librería DHT
+          display.printTemperature((int)thSensor->readTemperature());
+          display.printHumidity((int)thSensor->readHumidity());
+      }
       lastSlowUpdate = now;
   }
   
