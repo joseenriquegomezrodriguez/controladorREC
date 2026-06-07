@@ -49,7 +49,7 @@ class Clock {
         uint16_t getCount(); // Cuántos registros válidos hay realmente
         void clearMemory();
         void dumpLogsToSerial();   
-        void syncWithSerial(); // Declaración de la nueva función
+        void adjustTime(const DateTime& dt) { RTC.adjust(dt); }
         DateTime now() { return RTC.now(); }
 };
 #endif

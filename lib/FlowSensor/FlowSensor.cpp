@@ -11,7 +11,7 @@ FlowSensor::FlowSensor(uint8_t pin, float kFactor) {
   _instance = this;
 }
 
-void FlowSensor::begin() {
+void FlowSensor::init() {
   pinMode(_pin, INPUT_PULLUP);
   // Configuramos la interrupción en el flanco de subida (RISING)
   attachInterrupt(digitalPinToInterrupt(_pin), FlowSensor::handleInterrupt, RISING);

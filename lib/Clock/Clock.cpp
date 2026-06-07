@@ -22,13 +22,20 @@ bool Clock::init(){
     // Solo ajustar si se perdió la hora
     RTC.adjust(DateTime(__DATE__, __TIME__));
   };
-  // Leer estado actual
+
+  // Leer estado actual de la EEPROM
   readEEPROM(_ptrAddr, (byte*)&_nextIndex, sizeof(_nextIndex));
-  readEEPROM(_fullFlagAddr, (byte*)&_isFull, sizeof(_isFull));
   
-  if (_nextIndex >= _maxEntries) { // Fail-safe por si la EEPROM es nueva
+  uint8_t tempFull;
+  readEEPROM(_fullFlagAddr, &tempFull, 1);
+
+  // Fail-safe: Si el índice es mayor al máximo o el flag no es 0 ni 1 (EEPROM nueva/sucia)
+  if (_nextIndex >= _maxEntries || tempFull > 1) {
     clearMemory();
+  } else {
+    _isFull = (tempFull == 1);
   }
+
   return true;
 };
 
@@ -119,31 +126,6 @@ void Clock::readEEPROM(uint16_t address, byte* data, uint16_t len) {
   Wire.requestFrom(_eepromAddr, (uint8_t)len);
   for (uint16_t i = 0; i < len; i++) {
     if (Wire.available()) data[i] = Wire.read();
-  }
-}
-
-void Clock::syncWithSerial() {
-  if (Serial.available() > 0) {
-    char cmd = Serial.read(); // Leemos el primer carácter para identificar la acción
-
-    if (cmd == 'T' || cmd == 't') {
-      // Sincronización de hora. Formato: T2024,05,20,10,15,00
-      int year = Serial.parseInt();
-      if (year >= 2024) {
-        int month = Serial.parseInt();
-        int day = Serial.parseInt();
-        int hour = Serial.parseInt();
-        int minute = Serial.parseInt();
-        int second = Serial.parseInt();
-        
-        RTC.adjust(DateTime(year, month, day, hour, minute, second));
-        Serial.println(F(">> RTC sincronizado con éxito."));
-      }
-    } 
-    else if (cmd == 'L' || cmd == 'l') {
-      // Comando para volcar el historial de logs
-      dumpLogsToSerial();
-    }
   }
 }
 

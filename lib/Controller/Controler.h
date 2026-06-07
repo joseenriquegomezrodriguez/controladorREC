@@ -9,6 +9,7 @@
 #include "Clock.h"
 #include "Display.h"
 #include "CustomKeypad.h"
+#include "SoilSensor.h"
 
 // Referencias a objetos globales definidos en el main
 extern Display display;
@@ -24,6 +25,7 @@ private:
     Button* ModeButton;
     CustomKeypad* keypad;
     bool useKeypad;
+    SoilSensor* soilSensor;
     
     uint8_t state; // 0: AUTO, 1: MANU, 2: STOP
     uint8_t backLightDuration;
@@ -33,10 +35,12 @@ private:
     void checkButtons();
     void checkBackLight();
     void checkIrrigation(DateTime today);
+    void checkCmds();
+    void printHelp();
 
 public:
     Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves, 
-              Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton);
+              Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor);
     Controler(Electrovalve** v_array, uint8_t n_valves, 
               Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad);
     

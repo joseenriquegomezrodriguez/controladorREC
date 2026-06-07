@@ -5,10 +5,10 @@
 #include "Controler.h"
 
 
-Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), state(2), backLightDuration(2){
+Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), state(2), backLightDuration(2){
 };
-Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), state(2), backLightDuration(2) {
-}
+Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(nullptr), state(2), backLightDuration(2) {
+};
 
 void Controler::setAuto(){
   state = 1;
@@ -29,7 +29,20 @@ void Controler::init(){
     if (useKeypad && keypad != nullptr) {
         keypad->init();
     }
+    printHelp();
 };
+
+void Controler::printHelp() {
+    Serial.println(F("\n--- CONTROLADOR DE RIEGO REC ---"));
+    Serial.println(F("Comandos serie disponibles:"));
+    Serial.println(F("  S<valor> : Calibrar punto SECO (0%) del sensor de suelo"));
+    Serial.println(F("  H<valor> : Calibrar punto HUMEDO (100%) del sensor de suelo"));
+    Serial.println(F("  T<Y,M,D,h,m,s> : Ajustar Fecha/Hora (ej: T2024,05,22,10,30,00)"));
+    Serial.println(F("  L o D    : Descargar historial de logs desde la EEPROM"));
+    Serial.println(F("  R        : Borrar (Reset) todos los logs de la memoria"));
+    Serial.println(F("  ?        : Mostrar este menu de ayuda"));
+    Serial.println(F("--------------------------------\n"));
+}
 
 void Controler::checkBackLight(){
 if (display.getBackLight()){
@@ -209,13 +222,64 @@ void Controler::checkIrrigation(DateTime today){
 
     if (now - lastDisplayUpdate >= 200) lastDisplayUpdate = now;
 };
+
+void Controler::checkCmds() {
+    if (Serial.available() > 0) {
+        char cmd = Serial.read(); 
+
+        // 1. Comandos del Sensor de Suelo (S: Seco, H: Humedo)
+        if (soilSensor != nullptr && (cmd == 'S' || cmd == 's' || cmd == 'H' || cmd == 'h')) {
+            int val = Serial.parseInt();
+            if (cmd == 'S' || cmd == 's') {
+                soilSensor->calibrateDry(val);
+                Serial.print(F(">> Sensor Suelo: Calibracion SECO (0%) fijada en "));
+            } else {
+                soilSensor->calibrateWet(val);
+                Serial.print(F(">> Sensor Suelo: Calibracion HUMEDO (100%) fijada en "));
+            }
+            Serial.println(val);
+        } 
+        // 2. Comandos del Reloj (T: Tiempo)
+        else if (cmd == 'T' || cmd == 't') {
+            int year = Serial.parseInt();
+            if (year >= 2024) {
+                int month = Serial.parseInt();
+                int day = Serial.parseInt();
+                int hour = Serial.parseInt();
+                int minute = Serial.parseInt();
+                int second = Serial.parseInt();
+                clock.adjustTime(DateTime(year, month, day, hour, minute, second));
+                Serial.println(F(">> RTC sincronizado con éxito."));
+            }
+        }
+        // 3. Comandos de Logs (L: Logs, D: Dump)
+        else if (cmd == 'L' || cmd == 'l' || cmd == 'D' || cmd == 'd') {
+            clock.dumpLogsToSerial();
+        }
+        // 4. Reset logs
+        else if (cmd == 'R' || cmd == 'r') {
+            clock.clearMemory();
+            Serial.println(F(">> Memoria de logs borrada con exito."));
+        }
+        // 4. Ayuda
+        else if (cmd == '?') {
+            printHelp();
+        }
+    }
+}
+
 void Controler::check(){
   DateTime today = clock.now();
   uint32_t now = millis();
   static uint32_t lastSlowUpdate = 0;
 
-  // Permite ajustar la hora via Serial si es necesario
-  clock.syncWithSerial();
+  if (soilSensor != nullptr) {
+    int soilMoisture = soilSensor->read();
+    display.printSoilMoisture(soilMoisture);
+  }
+
+  // Procesar comandos recibidos por puerto serie
+  checkCmds();
 
   // Actualizar información estática/lenta solo cada 1 segundo para evitar saturar el I2C
   if (now - lastSlowUpdate >= 1000) {

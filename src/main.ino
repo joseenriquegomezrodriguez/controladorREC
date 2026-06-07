@@ -8,10 +8,13 @@
 #include "Electrovalve.h"
 #include "Program.h"
 #include "Pumb.h"
+#include "FlowSensor.h"
 #include "Button.h"
+#include "SoilSensor.h"
 
 Display display;
 Clock clock;
+SoilSensor soilSensor(A0); // Sensor de humedad conectado al pin A0
 
 // Definiciones de arrays de días fijos (necesario si Program espera un const uint8_t days[])
 const uint8_t NO_DAYS[7] = {0, 0, 0, 0, 0, 0, 0};
@@ -75,7 +78,7 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
 
   // 4. CORRECCIÓN: Nombre de clase 'Controller' debe coincidir con el include 'Controler.h'. 
   // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
-  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton );
+  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor);
 
 void setup() {
   Serial.begin(115200);
@@ -89,7 +92,8 @@ void setup() {
   E2.init();
   E3.init();
   pumb.init();
-  flowSensor.begin();
+  flowSensor.init();
+  soilSensor.init();
   display.init();
   clock.init();
   rec.init(); 

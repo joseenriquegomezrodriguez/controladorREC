@@ -22,7 +22,7 @@ class FlowSensor {
     // Manejador de interrupción (estático) - Público para permitir simulación en tests
     static void handleInterrupt();
 
-    void begin();
+    void init();
     void reset();          // Pone el contador a cero para un nuevo riego
     float getVolume();     // Devuelve los litros acumulados
     uint32_t getPulses();  // Devuelve los pulsos totales (por si acaso)

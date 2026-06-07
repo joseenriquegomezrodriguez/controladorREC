@@ -21,7 +21,7 @@ void Display::init(){
     lcd.setCursor(0,0);
     lcd.print(F("CONTROL DE REG E:xxx"));
     lcd.setCursor(0,1);
-    lcd.print(F("T:xx M:xxxx E1 E2 E3"));
+    lcd.print(F("T:xx M:AUTO E1 E2 E3"));
     lcd.setCursor(0,2);
     lcd.print(F("HT:xxxx VA:xx.xL/min"));
     lcd.setCursor(0,3);
@@ -72,4 +72,11 @@ void Display::printFlow(float flow) {
     char buffer[6];
     dtostrf(flow, 4, 1, buffer); // Formato "xx.x" (4 caracteres)
     print(pos_VA[0], pos_VA[1], buffer);
-}
+};
+void Display::printSoilMoisture(int soilMoisture) {
+    char buffer[6]; // Espacio suficiente para "100%" + el terminador nulo
+    char clearBuffer[] = "    "; // El compilador asigna automáticamente el tamaño necesario (5 bytes)
+    snprintf(buffer, sizeof(buffer), "%d%%", soilMoisture);
+    print(pos_HT[0], pos_HT[1], clearBuffer); // Limpia el espacio antes de imprimir el nuevo valor
+    print(pos_HT[0], pos_HT[1], buffer);    // Imprime en la esquina superior izquierda de
+};
