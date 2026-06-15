@@ -1,5 +1,5 @@
-#ifndef CONTROLER_H
-#define CONTROLER_H
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
 
 #include <Arduino.h>
 #include "Electrovalve.h"
@@ -16,7 +16,7 @@
 extern Display display;
 extern Clock clock;
 
-class Controler {
+class Controller {
 private:
     Electrovalve** valves;
     Button** valveButtons;
@@ -43,9 +43,9 @@ private:
     float getCorrectionFactor();
     bool moistureInhibit;
 public:
-    Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves, 
+    Controller(Electrovalve** v_array, Button** b_array, uint8_t n_valves, 
               Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor);
-    Controler(Electrovalve** v_array, uint8_t n_valves, 
+    Controller(Electrovalve** v_array, uint8_t n_valves, 
               Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor);
     
     void init();

@@ -1,31 +1,31 @@
-//Controler.cpp
+//Controller.cpp
 //
 #include <Arduino.h>
 #include "Electrovalve.h"
-#include "Controler.h"
+#include "Controller.h"
 
 
-Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false){
+Controller::Controller(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false){
 };
-Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false) {
+Controller::Controller(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false) {
 };
 
-void Controler::setAuto(){
+void Controller::setAuto(){
   state = 1;
   display.printMode("AUTO");
 };
-void Controler::setManual(){
+void Controller::setManual(){
     state = 2;
     pumb->setON();
     display.printMode("MANU");
 };
-void Controler::setStop(){
+void Controller::setStop(){
     state = 0;
     pumb->setOFF();
     display.printMode("STOP");
 };
 
-void Controler::init(){
+void Controller::init(){
     if (useKeypad && keypad != nullptr) {
         keypad->init();
     }
@@ -35,7 +35,7 @@ void Controler::init(){
     printHelp();
 };
 
-void Controler::printHelp() {
+void Controller::printHelp() {
     Serial.println(F("\n--- CONTROLADOR DE RIEGO REC ---"));
     Serial.println(F("Comandos serie disponibles:"));
     Serial.println(F("  S<valor> : Calibrar punto SECO (0%) del sensor de suelo"));
@@ -47,7 +47,7 @@ void Controler::printHelp() {
     Serial.println(F("--------------------------------\n"));
 }
 
-void Controler::checkBackLight(){
+void Controller::checkBackLight() {
 if (display.getBackLight()){
     DateTime today = clock.now();
     int nowMinutes = today.hour() * 60 + today.minute();
@@ -58,7 +58,7 @@ if (display.getBackLight()){
   };
 };
 
-void Controler::changeState(){
+void Controller::changeState() {
   switch (state) {
     case 0: { // De STOP a AUTO
         setAuto();
@@ -74,11 +74,11 @@ void Controler::changeState(){
       }
   };
 };
-void Controler::setBackLightTime(DateTime time){
+void Controller::setBackLightTime(DateTime time) {
   this->backLightTime = time;
 };
 
-void Controler::checkButtons(){
+void Controller::checkButtons() {
   bool anyButtonPressed = false;
     char printBuffer[20]; // Buffer para sprintf
     static bool lastValveBtnStates[10] = {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH};
@@ -117,7 +117,7 @@ void Controler::checkButtons(){
     }
 };
 
-void Controler::checkKeypad() {
+void Controller::checkKeypad() {
     char key = keypad->getKey();
     if (key) {
         // Lógica de Backlight: cualquier tecla lo enciende si está apagado
@@ -155,7 +155,7 @@ void Controler::checkKeypad() {
     }
 }
 
-void Controler::checkIrrigation(DateTime today, float correctionFactor){
+void Controller::checkIrrigation(DateTime today, float correctionFactor) {
   char printBuffer[20]; // Buffer para sprintf
   static uint32_t lastDisplayUpdate = 0;
   bool anyActive = false; 
@@ -226,7 +226,7 @@ void Controler::checkIrrigation(DateTime today, float correctionFactor){
     if (now - lastDisplayUpdate >= 200) lastDisplayUpdate = now;
 };
 
-void Controler::checkCmds() {
+void Controller::checkCmds() {
     if (Serial.available() > 0) {
         char cmd = Serial.read(); 
 
@@ -270,7 +270,7 @@ void Controler::checkCmds() {
         }
     }
 }
-float Controler::getCorrectionFactor() {
+float Controller::getCorrectionFactor() {
   int soilM = (soilSensor != nullptr) ? soilSensor->read() : 0;
   const int UPPER_THRESHOLD = 85; // Detener riego si sube de aquí
   const int LOWER_THRESHOLD = 80; // Permitir riego solo si baja de aquí
@@ -313,7 +313,7 @@ float Controler::getCorrectionFactor() {
   return factor;
 };
 
-void Controler::check(){
+void Controller::check() {
   DateTime today = clock.now();
   uint32_t now = millis();
   static uint32_t lastSlowUpdate = 0;

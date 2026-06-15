@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <RTClib.h> // Necesario para DateTime
 #include <DHT.h>
-#include "Controler.h"
+#include "Controller.h"
 #include "Display.h"
 #include "Clock.h"
 #include "Frame.h"
@@ -12,6 +12,9 @@
 #include "FlowSensor.h"
 #include "Button.h"
 #include "SoilSensor.h"
+#include "THSensor.h"
+#include "CustomKeypad.h"
+
 
 Display display;
 Clock clock;
@@ -77,11 +80,11 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   // 3. Agruparlas en arrays (listas)
   Electrovalve* listaValvulas[] = {&E1, &E2, &E3};
   Button* listaBotones[] = {&E1Button, &E2Button, &E3Button};
-  uint8_t totalValvulas = 3;
+  const uint8_t totalValvulas = sizeof(listaValvulas) / sizeof(listaValvulas[0]);
 
-  // 4. CORRECCIÓN: Nombre de clase 'Controller' debe coincidir con el include 'Controler.h'. 
+  // 4.  
   // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
-  Controler rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor, &thSensor);
+  Controller rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor, &thSensor);
 
 void setup() {
   Serial.begin(115200);
