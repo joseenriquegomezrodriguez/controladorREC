@@ -36,10 +36,12 @@ private:
     void checkKeypad();
     void checkButtons();
     void checkBackLight();
-    void checkIrrigation(DateTime today);
+    void checkIrrigation(DateTime today, float correctionFactor);
     void checkCmds();
     void printHelp();
 
+    float getCorrectionFactor();
+    bool moistureInhibit;
 public:
     Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves, 
               Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor);

@@ -18,16 +18,18 @@ class FlowSensor {
   public:
     // Constructor
     FlowSensor(uint8_t pin, float kFactor = 7.5);
+    ~FlowSensor();
 
-    // Manejador de interrupción (estático) - Público para permitir simulación en tests
-    static void handleInterrupt();
+    
+    static void handleInterrupt();// Manejador de interrupción (estático) - Público para permitir simulación en tests
 
     void init();
     void reset();          // Pone el contador a cero para un nuevo riego
+    void setPulses(uint32_t pulses); // Inyectar pulsos (útil para tests o restauración)
     float getVolume();     // Devuelve los litros acumulados
     uint32_t getPulses();  // Devuelve los pulsos totales (por si acaso)
-    // Nueva función: Devuelve Litros por Minuto (L/min)
-    float getInstantFlow();
+    float getInstantFlow(); // Nueva función: Devuelve Litros por Minuto (L/min)
+    float getKFactor() const { return _kFactor; }
 };
 
 #endif

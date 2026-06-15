@@ -25,6 +25,7 @@ class Clock {
         const uint16_t _ptrAddr = 0;       // Donde toca escribir el siguiente (2 bytes)
         const uint16_t _fullFlagAddr = 2;  // Indica si ya se llenó una vez (1 byte)
         const uint16_t _startDataAddr = 4; // Inicio de los registros
+        const uint16_t _lifetimeAddr = 4080; // Dirección para litros totales en RTC EEPROM
     
         const uint16_t _maxEntries = 370;  // Ajustado para 11 bytes por entrada (4070 bytes)
     
@@ -49,6 +50,11 @@ class Clock {
         uint16_t getCount(); // Cuántos registros válidos hay realmente
         void clearMemory();
         void dumpLogsToSerial();   
+
+        // Gestión de Litros Totales (Vida del aparato) en EEPROM Interna
+        uint32_t getTotalLifetimeLiters();
+        void addLifetimeLiters(uint16_t liters);
+
         void adjustTime(const DateTime& dt) { RTC.adjust(dt); }
         DateTime now() { return RTC.now(); }
 };

@@ -25,7 +25,14 @@ void Display::init(){
     lcd.setCursor(0,2);
     lcd.print(F("HT:xxxx VA:xx.xL/min"));
     lcd.setCursor(0,3);
-    lcd.print(F("HA:xx% D:xx H:"));
+    lcd.print(F("HA:xx% D:xx H:xx:xx"));
+    // lcd.print(F("E:xxx T:xx M:AUTO"));
+    // lcd.setCursor(0,1);
+    // lcd.print(F("E1 E2 E3 E4 E5 E6 E7"));
+    // lcd.setCursor(0,2);
+    // lcd.print(F("HT:xxxx VA:xx.xL/min"));
+    // lcd.setCursor(0,3);
+    // lcd.print(F("HA:xx% D:xx H:xx:xx"));
 
 };
 bool Display::getBackLight(){

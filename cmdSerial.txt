@@ -1,0 +1,42 @@
+--------------------CONTROLADOR DE RIEGO REC ------------------------
+Comandos serie disponibles:
+  S<valor> : Calibrar punto SECO (0%) del sensor de suelo
+  H<valor> : Calibrar punto HUMEDO (100%) del sensor de suelo
+  T<Y,M,D,h,m,s> : Ajustar Fecha/Hora (ej: T2024,05,22,10,30,00)
+  L o D    : Descargar historial de logs desde la EEPROM
+  R        : Borrar (Reset) todos los logs de la memoria
+  ?        : Mostrar este menu de ayuda
+----------------------------------------------------------------------
+
+
+
+
+CONTROL DE REG E:xxx
+T:xx M:AUTO E1 E2 E3
+HT:xxxx VA:xx.xL/min
+HA:xx% D:xx H:00:00
+
+E:(PRI,EST,TAR,HIV)
+T: Temperatura C
+HT: Humitat Terra %
+HA: Humitat ambient %
+D: Dia de la setmana
+H: Hora actual
+
+
+
+
+
+Butons  (MODE)    (E1)  (E2)  (E3)
+
+Si la pantalla apaga qualsevol boto l'encen.
+Si la pantalla es encesa:
+(MODE): 
+  * AUTO El controlador funciona segons la programació del les electovalvules.
+  * MANU El controlador encen la bonba de forma manual.
+  * STOP El controlador s'atura. No funcionara cap programacion ni la bonba.
+
+(Ex):
+  * Ex La electrovalvula 1 funciona amb la programació.
+  * Mx La electrovalvula 1 funciona manualment encenent la valvula i la bomba.
+  * Xx La electrovalvula 1 s'atura.

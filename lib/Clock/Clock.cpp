@@ -137,6 +137,19 @@ char* Clock::getHour(){
   return hourBuffer;
 };
 
+uint32_t Clock::getTotalLifetimeLiters() {
+    uint32_t total;
+    readEEPROM(_lifetimeAddr, (byte*)&total, sizeof(total));
+    if (total == 0xFFFFFFFF) return 0; // Memoria virgen
+    return total;
+}
+
+void Clock::addLifetimeLiters(uint16_t liters) {
+    uint32_t total = getTotalLifetimeLiters();
+    total += liters;
+    writeEEPROM(_lifetimeAddr, (byte*)&total, sizeof(total));
+}
+
 const char* Clock::getDayOfTheWeek(){
   DateTime today = RTC.now();
   return D[today.dayOfTheWeek()];
@@ -148,6 +161,8 @@ const char* Clock::getStacion(){
 void Clock::dumpLogsToSerial() {
     uint16_t total = getCount();
     Serial.println(F("\n--- HISTORIAL DE RIEGOS Y ERRORES ---"));
+    Serial.print(F("LITROS TOTALES DE VIDA: ")); Serial.print(getTotalLifetimeLiters()); Serial.println(F(" L"));
+    Serial.println(F("--------------------------------------"));
     Serial.print(F("Registros encontrados: ")); Serial.println(total);
     Serial.println(F("Fecha      | Inicio | Fin   | Durac. | ID   | Consumo"));
     Serial.println(F("-----------|--------|-------|--------|------|---------"));

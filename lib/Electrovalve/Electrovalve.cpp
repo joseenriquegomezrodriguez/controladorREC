@@ -10,6 +10,8 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
   
   state = 1;
   _startTime = 0;
+  _startPulses = 0;
+  setOFF(); // Asegurar estado inicial cerrado para evitar logs falsos en el primer check
 
   init();
   
@@ -34,19 +36,34 @@ const char* Electrovalve::getLabelState(){
     }
     return labelState[0]; // Default to "X" if state is out of bounds
 }
-void Electrovalve::check(DateTime date){
+void Electrovalve::check(DateTime date, float factor){
   if (state == 1) { // State AUTO
-    bool shouldBeOn = false;
+    Program* activeProg = nullptr;
+    
+    // Buscamos si hay algún programa activo en este momento
     for (int i = 0; i < 4; ++i) {
-      if (programs[i]->inTimeFrame(date)){// Si el programa 'i' está activo, se enciende la válvula
-        shouldBeOn = true;
+      if (programs[i]->inTimeFrame(date)){
+        activeProg = programs[i];
         break;
       }
     }
-    if (shouldBeOn) {
-        setON(); // Asegura que el relé esté ENCENDIDO
+
+    if (activeProg != nullptr) {
+        if (!isActive()) {
+            // Si la válvula está cerrada y toca regar, la abrimos.
+            // El Controller detectará este cambio y fijará _startTime.
+            setON(); 
+        } else {
+            // Si ya está abierta, comprobamos si ha superado la duración ajustada
+            uint32_t elapsedSeconds = date.unixtime() - _startTime;
+            uint32_t adjustedLimit = (uint32_t)(activeProg->getDuration() * 60.0f * factor);
+            
+            if (elapsedSeconds >= adjustedLimit) {
+                setOFF();
+            }
+        }
     } else {
-        setOFF(); // Asegura que el relé esté APAGADO
+        setOFF(); 
     }
   }
   if (state == 2) setON(); // En modo Manual, la válvula debe estar ENCENDIDA

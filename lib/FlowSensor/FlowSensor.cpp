@@ -8,7 +8,15 @@ FlowSensor::FlowSensor(uint8_t pin, float kFactor) {
   _pin = pin;
   _kFactor = kFactor;
   _pulseCount = 0;
+  _lastPulseCount = 0;
+  _lastTime = 0;
   _instance = this;
+}
+
+FlowSensor::~FlowSensor() {
+  if (_instance == this) {
+    _instance = nullptr;
+  }
 }
 
 void FlowSensor::init() {
@@ -53,6 +61,12 @@ float FlowSensor::getInstantFlow() {
 void FlowSensor::reset() {
   noInterrupts(); // Protección para evitar que cambie mientras reseteamos
   _pulseCount = 0;
+  interrupts();
+}
+
+void FlowSensor::setPulses(uint32_t pulses) {
+  noInterrupts();
+  _pulseCount = pulses;
   interrupts();
 }
 

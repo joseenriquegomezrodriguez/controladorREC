@@ -5,9 +5,9 @@
 #include "Controler.h"
 
 
-Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2){
+Controler::Controler(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false){
 };
-Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2) {
+Controler::Controler(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(2), backLightDuration(2), moistureInhibit(false) {
 };
 
 void Controler::setAuto(){
@@ -155,7 +155,7 @@ void Controler::checkKeypad() {
     }
 }
 
-void Controler::checkIrrigation(DateTime today){
+void Controler::checkIrrigation(DateTime today, float correctionFactor){
   char printBuffer[20]; // Buffer para sprintf
   static uint32_t lastDisplayUpdate = 0;
   bool anyActive = false; 
@@ -174,10 +174,10 @@ void Controler::checkIrrigation(DateTime today){
       bool wasActive = valves[i]->isActive();
       
       // Si el controlador está en STOP (0), forzamos el cierre de la válvula
-      if (state == 0) {
+      if (state == 0 || (state == 1 && correctionFactor <= 0)) {
           valves[i]->setOFF();
       } else {
-          valves[i]->check(today);
+          valves[i]->check(today, (state == 1) ? correctionFactor : 1.0f);
       }
 
       bool isNowActive = valves[i]->isActive();
@@ -185,7 +185,6 @@ void Controler::checkIrrigation(DateTime today){
       // Detectar Inicio de Riego
       if (!wasActive && isNowActive) {
           valves[i]->setStartTime(today.unixtime());
-          flowSensor->reset();
           valves[i]->setStartPulses(flowSensor->getPulses());
       } 
       // Detectar Fin de Riego
@@ -195,9 +194,10 @@ void Controler::checkIrrigation(DateTime today){
           
           // Calculamos la diferencia de pulsos y convertimos a litros
           uint32_t totalPulses = flowSensor->getPulses() - valves[i]->getStartPulses();
-          // Usamos la misma fórmula que FlowSensor::getVolume() pero sobre el delta
-          uint16_t totalLiters = (uint16_t)(totalPulses / (7.5 * 60.0)); 
+          // Convertimos la diferencia de pulsos a litros usando el factor K del sensor
+          uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor->getKFactor() * 60.0)); 
           clock.saveLog(i + 1, totalLiters, startT, endT);
+          clock.addLifetimeLiters(totalLiters); // Actualizar acumulado histórico
       }
       
       if (isNowActive) anyActive = true;
@@ -270,6 +270,48 @@ void Controler::checkCmds() {
         }
     }
 }
+float Controler::getCorrectionFactor() {
+  int soilM = (soilSensor != nullptr) ? soilSensor->read() : 0;
+  const int UPPER_THRESHOLD = 85; // Detener riego si sube de aquí
+  const int LOWER_THRESHOLD = 80; // Permitir riego solo si baja de aquí
+
+  // 1. Lógica de Histéresis
+  if (soilM >= UPPER_THRESHOLD) {
+    moistureInhibit = true;
+  } else if (soilM < LOWER_THRESHOLD) {
+    moistureInhibit = false;
+  }
+
+  // Si estamos inhibidos por exceso de humedad (lluvia), el factor es 0
+  if (moistureInhibit) return 0.0;
+
+  float factor = 1.0;
+
+  // 2. Ajustes basados en condiciones ambientales (si el sensor está disponible)
+  if (thSensor != nullptr) {
+    float temp = thSensor->readTemperature();
+    float hum = thSensor->readHumidity();
+
+    // Aumentar un 3% por cada grado sobre 25°C, reducir si baja de 15°C
+    if (temp > 25.0) factor += (temp - 25.0) * 0.03;
+    else if (temp < 15.0) factor -= (15.0 - temp) * 0.02;
+
+    // Ajustar por humedad relativa del aire
+    if (hum > 75.0) factor -= 0.2;      // Ambiente muy húmedo -> menos riego
+    else if (hum < 30.0) factor += 0.2; // Ambiente muy seco -> más riego
+  }
+
+  // 3. Reducción progresiva según humedad del suelo (rango de 50% a 85%)
+  if (soilM > 50) {
+    float reduction = (float)(soilM - 50) / 35.0; // Escala de 0.0 a 1.0
+    factor *= (1.0 - reduction);
+  }
+
+  // Limitar el factor entre 0.0 y un máximo de 2.0 (doble de tiempo) para seguridad
+  if (factor < 0.0) factor = 0.0;
+  if (factor > 2.0) factor = 2.0;
+  return factor;
+};
 
 void Controler::check(){
   DateTime today = clock.now();
@@ -317,5 +359,5 @@ void Controler::check(){
 
   }
   this->checkBackLight();
-  this->checkIrrigation(today);
+  this->checkIrrigation(today, getCorrectionFactor());
 };

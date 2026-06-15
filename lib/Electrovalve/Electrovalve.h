@@ -15,7 +15,7 @@ class Electrovalve : public Rele{
         const char labelState[3][3]={"X","E","M"};
     public:
         Electrovalve(Program* Programs, uint8_t relePin);
-        void check(DateTime date);
+        void check(DateTime date, float factor);
         void changeState();
         uint8_t getState() { return state; }
         const char* getLabelState();
