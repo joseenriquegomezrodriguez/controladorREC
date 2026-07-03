@@ -16,7 +16,7 @@ bool Clock::init(){
     return false;
   }else{  
     Serial.println("Find RTC");
-     // RTC.adjust(DateTime(__DATE__, __TIME__));
+      //RTC.adjust(DateTime(__DATE__, __TIME__));
   }
   if (RTC.lostPower()) {
     // Solo ajustar si se perdió la hora
@@ -203,7 +203,14 @@ void Clock::dumpLogsToSerial() {
         // Identificador (Válvula o Error)
         if (entry.valve == ERR_LEAK) Serial.print(F("FUGA "));
         else if (entry.valve == ERR_DRY_RUN) Serial.print(F("SECO "));
-        else { Serial.print(F("VAL")); Serial.print(entry.valve); }
+        else if (entry.valve == 0x80) Serial.print(F("MANU "));
+        else { 
+            uint8_t realId = entry.valve & 0x7F; // Quitamos el bit de manual
+            bool isManual = entry.valve & 0x80;   // Comprobamos si el bit estaba puesto
+            Serial.print(F("VAL")); 
+            Serial.print(realId);
+            if (isManual) Serial.print(F("(M)"));
+        }
         
         Serial.print(F(" | "));
         Serial.print(entry.liters);

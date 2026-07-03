@@ -1,0 +1,31 @@
+
+Modos Controlador:
+
+STOP
+- No checkea la programacion de riego de ninguna electrovalvula.
+- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
+    - Escribir log de riego manual de la electrovavula VALx(M).
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba. 
+- Si no hay electrovalulas encendidas ni la bomba encendidida no deberia existir flujo de agua.
+    - Si existe deberia escribir log de fuga. //todo cerrar el paso 
+
+MANU
+- Enciende la bomba.
+    - Si hay flujo contabilizar y hacer log con identificador MANU.
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba.
+- Comproba si toca progama de riego en las electrovalvulas.
+    - Hacer log de la electrovalvula si riega VALx.
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
+- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
+    - Escribir log de riego manual de la electrovavula VALx(M).
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
+
+AUTO
+- Comproba si toca progama de riego en las electrovalvulas.
+    - Hacer log de la electrovalvula si riega VALx.
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba.
+- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
+    - Escribir log de riego manual de la electrovavula VALx(M).
+    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
+ Si no hay electrovalulas encendidas ni la bomba encendidida no deberia existir flujo de agua.
+    - Si existe deberia escribir log de fuga. //todo cerrar el paso 

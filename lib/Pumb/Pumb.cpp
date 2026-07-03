@@ -5,9 +5,6 @@
 #include <RTClib.h>
 
 
-Pumb::Pumb( uint8_t relePin) :  Rele(relePin,true){
-  
-init();
-setOFF();
- 
+Pumb::Pumb(uint8_t relePin) : Rele(relePin, false) {
+    // No llamar a init() aquí, dejar que Controller o Main lo hagan
 };

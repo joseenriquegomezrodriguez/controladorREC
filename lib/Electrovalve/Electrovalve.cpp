@@ -6,11 +6,9 @@
 #include <RTClib.h>
 
 
-Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,true){
+Electrovalve::Electrovalve(Program* Programs, uint8_t relePin, bool inverted) : Rele(relePin, inverted){
   
   state = 1;
-  _startTime = 0;
-  _startPulses = 0;
   setOFF(); // Asegurar estado inicial cerrado para evitar logs falsos en el primer check
 
   init();
@@ -23,10 +21,6 @@ Electrovalve::Electrovalve(Program* Programs, uint8_t relePin) : Rele(relePin,tr
 
 void Electrovalve::changeState(){
   state = (state + 1) % 3; // Ciclo: 0(X) -> 1(E) -> 2(M) -> 0(X)
-  
-  // Acciones inmediatas al cambiar de modo
-  if (state == 2) setON();  // Manual: Abrir ya
-  if (state == 0) setOFF(); // Stop: Cerrar ya
 };
 
 const char* Electrovalve::getLabelState(){
@@ -50,9 +44,12 @@ void Electrovalve::check(DateTime date, float factor){
 
     if (activeProg != nullptr) {
         if (!isActive()) {
-            // Si la válvula está cerrada y toca regar, la abrimos.
-            // El Controller detectará este cambio y fijará _startTime.
-            setON(); 
+            // BLOQUEO DE REINICIO: Solo permite abrir la válvula en el minuto 00.
+            // Si el riego termina (ej. a los 9 min por factor), al ser ya el minuto 09,
+            // esta condición impedirá que se vuelva a abrir inmediatamente.
+            if (date.minute() == 0) {
+                setON(); 
+            }
         } else {
             // Si ya está abierta, comprobamos si ha superado la duración ajustada
             uint32_t elapsedSeconds = date.unixtime() - _startTime;
@@ -66,6 +63,15 @@ void Electrovalve::check(DateTime date, float factor){
         setOFF(); 
     }
   }
-  if (state == 2) setON(); // En modo Manual, la válvula debe estar ENCENDIDA
-  if (state == 0) setOFF(); // En modo Stop, la válvula debe estar APAGADA
+  if (state == 2){
+    if (!isActive()){
+      setON(); // En modo Manual, la válvula debe estar ENCENDIDA
+    }  
+  }  
+  if (state == 0){
+    if (isActive()){
+      setOFF(); // En modo Stop, la válvula debe estar APAGADA
+      //setEndTime(date.unixtime()); // Registrar el tiempo de fin para el log
+    }
+  } 
 };
