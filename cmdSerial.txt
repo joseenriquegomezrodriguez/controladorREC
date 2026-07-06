@@ -1,11 +1,11 @@
 --------------------CONTROLADOR DE RIEGO REC ------------------------
-Comandos serie disponibles:
+  Comandos serie disponibles:
   S<valor> : Calibrar punto SECO (0%) del sensor de suelo
   H<valor> : Calibrar punto HUMEDO (100%) del sensor de suelo
   T<Y,M,D,h,m,s> : Ajustar Fecha/Hora (ej: T2024,05,22,10,30,00)
-  L o D    : Descargar historial de logs desde la EEPROM
+  D        : Descargar historial de logs desde la EEPROM
   R        : Borrar (Reset) todos los logs de la memoria
-  ?        : Mostrar este menu de ayuda
+  L        : Mostrar este menu de ayuda
 ----------------------------------------------------------------------
 
 
