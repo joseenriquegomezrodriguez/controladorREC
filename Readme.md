@@ -11,8 +11,8 @@ La programació del rec va lligada a les electrovalvules.
 Els moment de reg es registren dins de l'EEPROM del rellotge.
 
 També registre possibles problemes:
-Fuites d'aigua: consum d'aigua sense que estigui funcionant les electrovalvules o la bomba.
-Funcionament en sec: No hi ha fluxe d'aigua i la bomba esta funcionant.
+* Fuites d'aigua: consum d'aigua sense que estigui funcionant les electrovalvules o la bomba.
+* Funcionament en sec: No hi ha fluxe d'aigua i la bomba esta funcionant.
 
 Elements necessaris:
 * Arduino.
