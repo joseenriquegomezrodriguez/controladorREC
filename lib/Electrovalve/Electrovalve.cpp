@@ -6,21 +6,36 @@
 #include <RTClib.h>
 
 
-Electrovalve::Electrovalve(Program* Programs, uint8_t relePin, bool inverted) : Rele(relePin, inverted){
+Electrovalve::Electrovalve(uint8_t id, Program** Programs, uint8_t relePin, bool inverted) 
+: Rele(relePin, inverted), programs(Programs), id(id), _startTime(0), _startPulses(0), _isManualStart(false) {
   
-  state = 1;
+  state = 0;
   setOFF(); // Asegurar estado inicial cerrado para evitar logs falsos en el primer check
-
-  init();
-  
-
-  for (int i = 0; i < 4; ++i) {
-        programs[i] = &Programs[i]; 
-    }
 };
 
+uint32_t Electrovalve::getStartTime() const { return _startTime; }
+void Electrovalve::setStartTime(uint32_t time) { _startTime = time; }
+
+uint32_t Electrovalve::getStartPulses() const { return _startPulses; }
+void Electrovalve::setStartPulses(uint32_t pulses) { _startPulses = pulses; }
+
+bool Electrovalve::getIsManualStart() const { return _isManualStart; }
+void Electrovalve::setIsManualStart(bool manual) { _isManualStart = manual; }
+
 void Electrovalve::changeState(){
+  DateTime today = clock.now();
   state = (state + 1) % 3; // Ciclo: 0(X) -> 1(E) -> 2(M) -> 0(X)
+  //hacer las acciones necesarias según el nuevo estado
+  if (state == 0) { // STOP
+    setOFF();
+  } else if (state == 1) { // AUTO
+    setOFF(); // En AUTO, la válvula se controla por el programa, inicialmente cerrada
+  } else if (state == 2) { // MANUAL
+    setON(); // En MANUAL, la válvula debe estar abierta
+    setIsManualStart(true);
+    setStartTime(today.unixtime()); // Registrar el tiempo de inicio para el log
+    setStartPulses(flowSensor.getPulses()); // Registrar los pulsos iniciales
+  }
 };
 
 const char* Electrovalve::getLabelState(){
@@ -60,18 +75,19 @@ void Electrovalve::check(DateTime date, float factor){
             }
         }
     } else {
-        setOFF(); 
+        //comprobar que al no haber programa activo, la válvula esté cerrada.
+        if (isActive()) {
+            setOFF();
+        }
+
     }
   }
-  if (state == 2){
-    if (!isActive()){
-      setON(); // En modo Manual, la válvula debe estar ENCENDIDA
-    }  
+  if (state == 2){ // State Electorvalve MANUAL
+    // si no hay fujo, comprobar que no haya pasado más de 5 segundos desde que se abrió la válvula y si es así, cerrar la válvula y registrar el log de riego manual.
+  
+    // Aquí podrías agregar lógica para detectar flujo o falta de flujo y registrar logs si es necesario
   }  
-  if (state == 0){
-    if (isActive()){
-      setOFF(); // En modo Stop, la válvula debe estar APAGADA
-      //setEndTime(date.unixtime()); // Registrar el tiempo de fin para el log
-    }
+  if (state == 0){ // State Electorvalve STOP
+    //comprobar posibles fugas.
   } 
 };

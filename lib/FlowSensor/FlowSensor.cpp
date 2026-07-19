@@ -10,6 +10,7 @@ FlowSensor::FlowSensor(uint8_t pin, float kFactor) {
   _pulseCount = 0;
   _lastPulseCount = 0;
   _lastTime = 0;
+  _flowRate = 0.0f;
   _instance = this;
 }
 
@@ -32,30 +33,27 @@ void FlowSensor::handleInterrupt() {
 }
 float FlowSensor::getInstantFlow() {
   uint32_t currentTime = micros();
-  uint32_t currentPulses;
   
-  noInterrupts();
-  currentPulses = _pulseCount;
-  interrupts();
+  // Solo recalculamos el caudal si han pasado al menos 100 ms (100,000 micros)
+  // Esto permite llamar a la función desde múltiples sitios del bucle (display,
+  // control de fugas, etc.) sin vaciar los pulsos acumulados en lecturas intermedias rápidas.
+  if (currentTime - _lastTime >= 100000) {
+    uint32_t currentPulses;
+    noInterrupts();
+    currentPulses = _pulseCount;
+    interrupts();
 
-  // Calcular tiempo transcurrido en segundos (usando micros para más precisión)
-  float duration = (currentTime - _lastTime) / 1000000.0;
-  if (duration <= 0) return 0;
-
-  // Calcular pulsos en este intervalo
-  uint32_t pulsesInInterval = currentPulses - _lastPulseCount;
-  
-  // Frecuencia (Hz) = pulsos / segundos
-  float frequency = pulsesInInterval / duration;
-  
-  // Caudal (L/min) = Frecuencia / K
-  float flowRate = frequency / _kFactor;
-
-  // Guardar estado para la próxima lectura
-  _lastPulseCount = currentPulses;
-  _lastTime = currentTime;
-
-  return flowRate;
+    float duration = (currentTime - _lastTime) / 1000000.0;
+    if (duration > 0) {
+      uint32_t pulsesInInterval = currentPulses - _lastPulseCount;
+      float frequency = pulsesInInterval / duration;
+      _flowRate = frequency / _kFactor;
+      
+      _lastPulseCount = currentPulses;
+      _lastTime = currentTime;
+    }
+  }
+  return _flowRate;
 }
 
 void FlowSensor::reset() {

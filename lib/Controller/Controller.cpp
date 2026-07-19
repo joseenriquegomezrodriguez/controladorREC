@@ -5,27 +5,61 @@
 #include "Controller.h"
 
 
-Controller::Controller(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, FlowSensor* flowSensor, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor):valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(1), backLightDuration(1), moistureInhibit(false){
-};
-Controller::Controller(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, FlowSensor* flowSensor, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor) : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), flowSensor(flowSensor), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(1), backLightDuration(1), moistureInhibit(false) {
+Controller::Controller(Electrovalve** v_array, Button** b_array, uint8_t n_valves,  Pumb* PUmb, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor)
+    : valves(v_array), valveButtons(b_array), numValves(n_valves), pumb(PUmb), ModeButton(modeButton), keypad(nullptr), useKeypad(false), soilSensor(soilSensor), thSensor(thSensor), state(0), backLightDuration(1), moistureInhibit(false),
+      leakStartTime(0), leakStartPulses(0), manualStartTime(0), manualStartPulses(0), noFlowStartTime(0), lastActiveTime(0) {
 };
 
-void Controller::setAuto(){
+Controller::Controller(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor)
+    : valves(v_array), valveButtons(nullptr), numValves(n_valves), pumb(PUmb), ModeButton(nullptr), keypad(keypad), useKeypad(true), soilSensor(soilSensor), thSensor(thSensor), state(0), backLightDuration(1), moistureInhibit(false),
+      leakStartTime(0), leakStartPulses(0), manualStartTime(0), manualStartPulses(0), noFlowStartTime(0), lastActiveTime(0) {
+};
+
+// Funcion para cambiar el estado del controlador a AUTO.
+// Viene de STOP. Si había flujo mientras estaba en STOP, se registra un error de fuga.
+void Controller::setAuto(){ 
   state = 1;
   display.printMode("AUTO");
+  pumb->setOFF();
+  pumb->setState(1);
 };
+
+// Funcion para cambiar el estado del controlador a MANUAL.
+// Viene de AUTO. Si comprueba si en auto había flujo sin electrovalvulas encendidas y da el log de error. 
+//registra el tiempo y pulsos de inicio para el log de riego manual.
 void Controller::setManual(){
     state = 2;
-    pumb->setON();
     display.printMode("MANU");
+    for (uint8_t i = 0; i < numValves; i++) {
+        valves[i]->setOFF();        
+    }
+    pumb->setStartTime(clock.now().unixtime());
+    pumb->setStartPulses(flowSensor.getPulses());
+    pumb->setIsManualStart(true);
+    pumb->setON();
+    pumb->setState(2);
 };
+
+// Funcion para cambiar el estado del controlador a STOP y apaga todas las electrovalvulas.
+
 void Controller::setStop(){
     state = 0;
-    pumb->setOFF();
     display.printMode("STOP");
+    
+    for (uint8_t i = 0; i < numValves; i++) { 
+         valves[i]->setOFF();      
+    }
+    pumb->setOFF();
+    pumb->setState(0);
+    lastActiveTime = clock.now().unixtime();
 };
 
 void Controller::init(){
+    for (uint8_t i = 0; i < numValves; i++) {
+        valves[i]->setLastValveStates(1); // Default to AUTO mode for electrovalves
+        valves[i]->setValveNoFlowStartTime(0);
+    }
+
     if (useKeypad && keypad != nullptr) {
         keypad->init();
     }
@@ -33,6 +67,7 @@ void Controller::init(){
         thSensor->init();
     }
     printHelp();
+    setStop();
 };
 
 void Controller::printHelp() {
@@ -44,9 +79,10 @@ void Controller::printHelp() {
     Serial.println(F("  T<UnixTime,OffsetH> : Ajustar Fecha/Hora con Offset en horas (ej: T1781681651,2)"));
     Serial.println(F("  D    : Descargar historial de logs desde la EEPROM"));
     Serial.println(F("  R        : Borrar (Reset) todos los logs de la memoria"));
+    Serial.println(F("  C        : Resetear contador de litros totales de vida"));
     Serial.println(F("  L        : Mostrar este menu de ayuda"));
     Serial.println(F("--------------------------------\n"));
-}
+};
 
 void Controller::checkBackLight() {
 if (display.getBackLight()){
@@ -58,20 +94,30 @@ if (display.getBackLight()){
 };
 
 void Controller::changeState() {
+  DateTime today = clock.now();
+  //Serial.print(F(">> Estado actual del controlador: ")); Serial.println(state);
   switch (state) {
     case 0: { // De STOP a AUTO
+        checkAndSaveActiveLeak(today);
         setAuto();
         return;
       }
       case 1: { // De AUTO a MANUAL
+        checkAndSaveActiveLeak(today);
         setManual();
         return;
       }
       case 2: { // De MANUAL a STOP
+        checkAndSaveActiveLeak(today);
+        uint32_t endT = today.unixtime();
+        uint32_t totalPulses = flowSensor.getPulses() - pumb->getStartPulses();
+        uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+        clock.saveLog(0x80, totalLiters, pumb->getStartTime(), endT);
+        clock.addLifetimeLiters(totalLiters);
         setStop();
         return;
       }
-  };
+  }
 };
 void Controller::setBackLightTime(DateTime time) {
   this->backLightTime = time;
@@ -80,14 +126,16 @@ void Controller::setBackLightTime(DateTime time) {
 void Controller::checkButtons() {
   bool anyButtonPressed = false;
     char printBuffer[20]; // Buffer para sprintf
-    static bool lastValveBtnStates[10] = {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH};
+    //static bool lastValveBtnStates[10] = {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH};
 
+   // if (state == 0) return; // Si estamos en STOP, no procesamos botones de válvula
+    
     // 1. Recorremos todas las válvulas con un bucle
     for (uint8_t i = 0; i < numValves; i++) {
         bool currentBtnState = valveButtons[i]->read();
         
         // Detectamos el flanco de bajada (de HIGH a LOW) con resistencia Pull-up
-        if (currentBtnState == LOW && lastValveBtnStates[i] == HIGH) {
+        if (currentBtnState == LOW && valveButtons[i]->getLastState() == HIGH) {
             anyButtonPressed = true;
             delay(50); // Anti-rebote (Debounce) hardware
 
@@ -102,7 +150,7 @@ void Controller::checkButtons() {
                 display.printValveStatus(i, printBuffer); 
             }
         }
-        lastValveBtnStates[i] = currentBtnState;
+        valveButtons[i]->setLastState(currentBtnState);
     }
 
     // 2. Lógica del Backlight (Si se presiona CUALQUIER botón con la luz apagada)
@@ -134,142 +182,327 @@ void Controller::checkKeypad() {
         }
 
         // Control de electroválvulas (teclas '1' a '9')
-        if (key >= '1' && key <= '9') {
-            uint8_t i = key - '1';
+        if (key >= '0' && key <= '9') {
+            uint8_t i = key - '0';
             if (i < numValves) {
                 valves[i]->changeState();
                 char printBuffer[20];
-                sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
+                sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), valves[i]->getId());
                 display.printValveStatus(i, printBuffer);
             }
         }
 
-        // Soporte para válvula 10 con la tecla '0'
-        if (key == '0' && numValves >= 10) {
-            valves[9]->changeState();
-            char printBuffer[20];
-            sprintf(printBuffer, "%s%d", valves[9]->getLabelState(), 10);
-            display.printValveStatus(9, printBuffer);
+        
+    }
+};
+
+void Controller::checkAndSaveActiveLeak(DateTime today) { // Función para verificar si hubo flujo mientras el sistema estaba en STOP y registrar un posible error de fuga
+    if (leakStartTime != 0) {
+        uint32_t endT = today.unixtime();
+        uint32_t totalPulses = flowSensor.getPulses() - leakStartPulses;
+        uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+        if (totalLiters >= 2) {
+            clock.saveLog(ERR_LEAK, totalLiters, leakStartTime, endT);
+            clock.addLifetimeLiters(totalLiters);
+        }
+        Serial.print(F(">> Instant flow: "));Serial.print(flowSensor.getInstantFlow()); Serial.print(F(" L/min, Total Pulses: ")); Serial.print(totalPulses); Serial.print(F(", Total Liters: ")); Serial.println(totalLiters);
+        leakStartTime = 0;
+        leakStartPulses = 0;
+    }
+};
+
+void Controller::stopController() {
+     for (uint8_t i = 0; i < numValves; i++) { 
+          valves[i]->setOFF();
+     }
+    
+    DateTime today = clock.now();
+    bool isFlowing = flowSensor.getInstantFlow() > 0.1f;
+    if (today.unixtime() - lastActiveTime < 5) {
+        return; // Ignore flow sensor deceleration time
+    }
+    
+    if (isFlowing) {
+        if (leakStartTime == 0) {
+            leakStartTime = today.unixtime();
+            leakStartPulses = flowSensor.getPulses();
+        }
+    } else {
+        checkAndSaveActiveLeak(today);
+    }
+};
+
+void Controller::autoController(DateTime today, float correctionFactor) {
+    bool anyActive = false;
+    
+    // FALTA la lectura de los botones de las válvulas, si es que se usan botones físicos para cambiar el estado de las válvulas y cambiar el estado de las electorválvulas. 
+    // En el controlador en estado Auto las valvulas puedes cambiar de estado (stop -> auto -> manual)
+    checkButtons();
+    // Process each valve
+    for (uint8_t i = 0; i < numValves; i++) {
+        bool wasActive = valves[i]->isActive();
+        uint8_t prevMode = valves[i]->getLastValveStates();
+        uint8_t currMode = valves[i]->getState();
+        
+        // Handle valve mode transition
+        if (currMode != prevMode) {
+            if (prevMode == 2) { // Left MANUAL mode
+                uint32_t endT = today.unixtime();
+                uint32_t totalPulses = flowSensor.getPulses() - valves[i]->getStartPulses();
+                uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+                
+                clock.saveLog((i + 1) | 0x80, totalLiters, valves[i]->getStartTime(), endT);
+                clock.addLifetimeLiters(totalLiters);
+                
+                valves[i]->setStartTime(0);
+                valves[i]->setStartPulses(0);
+                valves[i]->setValveNoFlowStartTime(0);
+                
+                valves[i]->setLastValveStates(currMode);
+                return; // Exit completely to transition safely
+            }
+            valves[i]->setLastValveStates(currMode);
+        }
+        
+        if (currMode == 2 && prevMode != 2) { // Entering MANUAL mode
+            valves[i]->setIsManualStart(true);
+            valves[i]->setStartTime(today.unixtime());
+            valves[i]->setStartPulses(flowSensor.getPulses());
+            valves[i]->setValveNoFlowStartTime(0);
+        }
+        
+        // Execute state logic
+        if (currMode == 0) { // STOP
+            valves[i]->setOFF();
+            if (wasActive) { //
+                valves[i]->setStartTime(0);
+                valves[i]->setStartPulses(0);
+                valves[i]->setValveNoFlowStartTime(0);
+            }
+        } else if (currMode == 1) { // AUTO
+            if (correctionFactor <= 0) {
+                valves[i]->setOFF();
+            } else {
+                valves[i]->check(today, correctionFactor);
+            }
+            
+            bool isNowActive = valves[i]->isActive();
+            if (!wasActive && isNowActive) {
+                valves[i]->setStartTime(today.unixtime());
+                valves[i]->setStartPulses(flowSensor.getPulses());
+                valves[i]->setValveNoFlowStartTime(0);
+            } else if (wasActive && isNowActive) {
+                bool isFlowing = flowSensor.getInstantFlow() > 0.1f;
+                if (!isFlowing) {
+                    if (valves[i]->getValveNoFlowStartTime() == 0) {
+                    valves[i]->setValveNoFlowStartTime(today.unixtime());
+                    } else if (today.unixtime() - valves[i]->getValveNoFlowStartTime() >= 5) {
+                        // Dry running!
+                        uint32_t endT = today.unixtime();
+                        clock.saveLog(ERR_DRY_RUN, 0, endT, endT);
+                        
+                        valves[i]->setOFF();
+                        valves[i]->setStartTime(0);
+                        valves[i]->setStartPulses(0);
+                        valves[i]->setValveNoFlowStartTime(0);
+                    }
+                } else {
+                    valves[i]->setValveNoFlowStartTime(0);
+                }
+            } else if (wasActive && !isNowActive) {
+                uint32_t endT = today.unixtime();
+                uint32_t totalPulses = flowSensor.getPulses() - valves[i]->getStartPulses();
+                uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+                
+                clock.saveLog(valves[i]->getId(), totalLiters, valves[i]->getStartTime(), endT);
+                clock.addLifetimeLiters(totalLiters);
+                
+                valves[i]->setStartTime(0);
+                valves[i]->setStartPulses(0);
+                valves[i]->setValveNoFlowStartTime(0);
+            }
+        } else if (currMode == 2) { // MANUAL (valve)
+            valves[i]->check(today, 1.0f); // Ensures it stays ON
+            
+            bool isNowActive = valves[i]->isActive();
+            if (!wasActive && isNowActive) {
+                valves[i]->setStartTime(today.unixtime());
+                valves[i]->setStartPulses(flowSensor.getPulses());
+                valves[i]->setValveNoFlowStartTime(0);
+            } else if (wasActive && isNowActive) {
+                bool isFlowing = flowSensor.getInstantFlow() > 0.1f;
+                if (!isFlowing) {
+                    if (valves[i]->getValveNoFlowStartTime() == 0) {
+                        valves[i]->setValveNoFlowStartTime(today.unixtime());
+                    } else if (today.unixtime() - valves[i]->getValveNoFlowStartTime() >= 5) {
+                        // Dry run in valve manual mode!
+                        uint32_t endT = today.unixtime();
+                        uint32_t totalPulses = flowSensor.getPulses() - valves[i]->getStartPulses();
+                        uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+                        
+                        clock.saveLog(valves[i]->getId() | 0x80, totalLiters, valves[i]->getStartTime(), valves[i]->getValveNoFlowStartTime());
+                        clock.addLifetimeLiters(totalLiters);
+                        
+                        clock.saveLog(ERR_DRY_RUN, 0, endT, endT);
+                        
+                        valves[i]->setOFF();
+                        valves[i]->setStartTime(0);
+                        valves[i]->setStartPulses(0);
+                        valves[i]->setValveNoFlowStartTime(0);
+                        
+                        setStop();
+                        return;
+                    }
+                } else {
+                    valves[i]->setValveNoFlowStartTime(0);
+                }
+            }
+        }
+        
+        if (valves[i]->isActive()) {
+            anyActive = true;
         }
     }
-}
+    
+    // Master pump control
+    if (anyActive) {
+        pumb->setON();
+    } else {
+        pumb->setOFF();
+    }
+    
+    // Leak logging
+    bool isFlowing = flowSensor.getInstantFlow() > 0.1f;
+    if (anyActive) {
+        lastActiveTime = today.unixtime();
+        checkAndSaveActiveLeak(today);
+    } else {
+        if (today.unixtime() - lastActiveTime >= 5) {
+            if (isFlowing) {
+                if (leakStartTime == 0) {
+                    leakStartTime = today.unixtime();
+                    leakStartPulses = flowSensor.getPulses();
+                }
+            } else {
+                checkAndSaveActiveLeak(today);
+            }
+        }
+    }
+};
 
-void Controller::checkIrrigation(DateTime today, float correctionFactor) {
-  char printBuffer[20]; // Buffer para sprintf
-  static uint32_t lastDisplayUpdate = 0;
-  bool anyActive = false; 
+void Controller::manualController() {
+    pumb->setON();
+    for (uint8_t i = 0; i < numValves; i++) {
+        valves[i]->setOFF();
+    }
+    
+    bool isFlowing = flowSensor.getInstantFlow() > 0.1f;
+    DateTime today = clock.now();
+    uint32_t nowT = today.unixtime();
+    
+    lastActiveTime = nowT; // Record the last time manual pump was active
+    
+    if (!isFlowing) {
+        if (pumb->getValveNoFlowStartTime() == 0) {
+            pumb->setValveNoFlowStartTime(nowT);
+        } else if (nowT - pumb->getValveNoFlowStartTime() >= 5) {
+            // Log manual run up to stop of flow
+            uint32_t totalPulses = flowSensor.getPulses() - pumb->getStartPulses();
+            uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor.getKFactor() * 60.0));
+            clock.saveLog(0x80, totalLiters, pumb->getStartTime(), pumb->getValveNoFlowStartTime());
+            clock.addLifetimeLiters(totalLiters);
+            
+            // Log dry run error
+            clock.saveLog(ERR_DRY_RUN, 0, nowT, nowT);
+            
+            pumb->setStartTime(0);
+            pumb->setStartPulses(0);
+            setStop();
+        }
+    } else {
+        pumb->setValveNoFlowStartTime(0);
+    }
+};
+
+void Controller::check() {
+  DateTime today = clock.now();
   uint32_t now = millis();
-  
-  // Determine blink state (toggle every 500ms)
-  bool blinkVisible = (now / 500) % 2;
+  static uint32_t lastSlowUpdate = 0; // Timestamp for the last slow update (1 second interval)
 
-  // Actualizar caudal una sola vez por ciclo de refresco
-  if (now - lastDisplayUpdate >= 200) {
-      display.printFlow(flowSensor->getInstantFlow());
+  // Procesar comandos recibidos por puerto serie
+  checkCmds();
+
+  // Actualizar información estática/lenta solo cada 1 segundo para evitar saturar el I2C
+  if (now - lastSlowUpdate >= 1000) {
+      display.printHour(clock.getHour());
+      display.printDay(clock.getDayOfTheWeek());
+      display.printStation(clock.getStacion());
+      if (soilSensor != nullptr) {
+          display.printSoilMoisture(soilSensor->getMoisturePercentage());
+      }
+      if (thSensor != nullptr) {
+          // Se asume que THSensor implementa los métodos estándar de la librería DHT
+          display.printTemperature((int)thSensor->readTemperature());
+          display.printHumidity((int)thSensor->readHumidity());
+      }
+      lastSlowUpdate = now;
   }
   
-  // 1. Recorremos todas las válvulas con un bucle
-    for (uint8_t i = 0; i < numValves; i++) {
-      bool wasActive = valves[i]->isActive();
-      //Serial.print(F("VAL[")); Serial.print(i+1); Serial.print(F("] - State: ")); Serial.print(valves[i]->getState()); Serial.print(F(", wasActive: ")); Serial.println(wasActive ? "TRUE" : "FALSE");
-      
-      // Si el controlador está en STOP (0), forzamos el cierre de la válvula
-      if (state == 0 || (state == 1 && correctionFactor <= 0)) {
-          valves[i]->setOFF();
-      } else {
-          valves[i]->check(today, (state == 1) ? correctionFactor : 1.0f);
-      }
+  // Debug de riego programado (cada 30 segundos)
+  static uint32_t lastFactorLog = 0;
+  if (now - lastFactorLog >= 30000) {
+      //Serial.print(F(">> Info Riego: Factor de Correccion Actual = ")); Serial.println(getCorrectionFactor());
+      lastFactorLog = now;
+  }
 
-      bool isNowActive = valves[i]->isActive();
-      //Serial.print(F("VAL[")); Serial.print(i+1); Serial.print(F("] - isNowActive: ")); Serial.println(isNowActive ? "TRUE" : "FALSE");
-
-      // Detectar Inicio de Riego
-      if (!wasActive && isNowActive){
-          //Serial.print(F("VAL[")); Serial.print(i+1); Serial.println(F("] - DETECTADO INICIO DE RIEGO!"));
-          valves[i]->setStartTime(today.unixtime());
-          valves[i]->setStartPulses(flowSensor->getPulses());
-          valves[i]->setIsManualStart(valves[i]->getState() == 2); // Store if it started in manual mode
-          //Serial.print(F("VAL[")); Serial.print(i+1); Serial.print(F("] - StartTime: ")); Serial.print(valves[i]->getStartTime()); Serial.print(F(", StartPulses: ")); Serial.print(valves[i]->getStartPulses()); Serial.print(F(", isManualStart: ")); Serial.println(valves[i]->getIsManualStart() ? "TRUE" : "FALSE");
-      } 
-      
-      // Detectar Fin de Riego
-      else if (wasActive && !isNowActive) {
-          uint32_t startT = valves[i]->getStartTime();
-          uint32_t endT = today.unixtime();
-          
-          // Calculamos la diferencia de pulsos y convertimos a litros
-          uint32_t totalPulses = flowSensor->getPulses() - valves[i]->getStartPulses();
-          // Convertimos la diferencia de pulsos a litros usando el factor K del sensor
-          uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor->getKFactor() * 60.0)); 
-          
-          //Serial.print(F("VAL[")); Serial.print(i+1); Serial.println(F("] - DETECTADO FIN DE RIEGO!"));
-          //Serial.print(F("VAL[")); Serial.print(i+1); Serial.print(F("] - Duracion: ")); Serial.print(endT - startT); Serial.print(F("s, Litros: ")); Serial.print(totalLiters); Serial.print(F(", Manual: ")); Serial.println(valves[i]->getIsManualStart() ? "TRUE" : "FALSE");
-          // Si la válvula estaba en modo MANUAL (2), marcamos el ID para el log
-          uint8_t valveIdForLog = i + 1;
-          if (valves[i]->getIsManualStart()) valveIdForLog |= 0x80; // Marcamos el bit 7 si se inició manualmente
-          
-          clock.saveLog(valveIdForLog, totalLiters, startT, endT);
-          clock.addLifetimeLiters(totalLiters); // Actualizar acumulado histórico
-          
-          // LIMPIEZA CRÍTICA: Resetear datos de seguimiento
-          valves[i]->setStartTime(0);
-          valves[i]->setStartPulses(0);
+  if (useKeypad) {
+      checkKeypad();
+  } else {
+      //checkButtons();
+      // Lógica para el botón de modo físico con detección de flanco e inversión
+      if (ModeButton != nullptr) { // Asegurarse de que el botón de modo esté definido
+          // static bool lastModeBtnState = HIGH;
+          bool currentModeState = ModeButton->read();
+          //Serial.print(F(">> Estado Boton Modo: ")); Serial.println(currentModeState);
+          if (currentModeState == LOW && ModeButton->getLastState() == HIGH) {
+              if (display.getBackLight()) {
+                  changeState();
+              } else {
+                  display.setON();
+                  setBackLightTime(clock.now());
+                  delay(200); 
+              }
+          }
+          ModeButton->setLastState(currentModeState);
       }
+  }
+  this->checkBackLight();
+  
+  if (state == 0) {
+      stopController();
+  } else if (state == 1) {
+      autoController(today, getCorrectionFactor());
+  } else if (state == 2) {
+      manualController();
+  }
+
+  // Update display (flow and valve statuses)
+  static uint32_t lastDisplayUpdate = 0;
+  if (now - lastDisplayUpdate >= 200) {
+      display.printFlow(flowSensor.getInstantFlow());
       
-      if (isNowActive) anyActive = true;
-      
-      if (now - lastDisplayUpdate >= 200) {
-          // Implement blink: if valve is active, toggle visibility
+      bool blinkVisible = (now / 500) % 2;
+      char printBuffer[20];
+      for (uint8_t i = 0; i < numValves; i++) {
           if (valves[i]->isActive() && !blinkVisible) {
-              sprintf(printBuffer, "  "); // Borra solo la posición de esa válvula
+              sprintf(printBuffer, "  ");
           } else {
               sprintf(printBuffer, "%s%d", valves[i]->getLabelState(), i + 1);
           }
           display.printValveStatus(i, printBuffer);
       }
-    }
-
-    // Control maestro de la bomba respetando el estado del controlador
-    if (state == 0) {
-        pumb->setOFF(); // STOP: Bomba siempre apagada
-    } else if (state == 2) {
-        pumb->setON();  // MANUAL: Bomba siempre encendida (según tu setManual)
-    } else {
-        // AUTO: La bomba depende de si hay válvulas abiertas
-        if (anyActive) pumb->setON(); else pumb->setOFF();
-    }
-
-    // --- LOGS DE ACTIVIDAD DE LA BOMBA (Manual o Fugas) ---
-    // Detectamos si hay flujo real en el sistema para identificar fugas
-    bool isFlowing = flowSensor->getInstantFlow() > 0.1f;
-
-    // Inicio de registro: 
-    // 1. Hay flujo sin válvulas en AUTO (Posible FUGA)
-    // 2. O estamos en modo MANUAL sin válvulas (Actividad MANUAL)
-    if (pumb->getStartTime() == 0 && !anyActive) {
-        if ((state == 1 && isFlowing) || (state == 2)) {
-            pumb->setStartTime(today.unixtime());
-            pumb->setStartPulses(flowSensor->getPulses());
-            pumb->setIsManualStart(state == 2); // Identifica si es manual o fuga
-        }
-    }
-    // Fin de registro: El flujo se detuvo, salimos de MANUAL o se abrió una válvula
-    else if (pumb->getStartTime() != 0 && (anyActive || (state != 2 && !isFlowing))) {
-        uint32_t startT = pumb->getStartTime();
-        uint32_t endT = today.unixtime();
-        uint32_t totalPulses = flowSensor->getPulses() - pumb->getStartPulses();
-        uint16_t totalLiters = (uint16_t)(totalPulses / (flowSensor->getKFactor() * 60.0));
-        
-        uint8_t pumpIdForLog = pumb->getIsManualStart() ? 0x80 : ERR_LEAK; 
-        
-        if (totalLiters > 0 || (endT - startT) > 1) {
-            clock.saveLog(pumpIdForLog, totalLiters, startT, endT);
-            clock.addLifetimeLiters(totalLiters);
-        }
-        pumb->setStartTime(0);
-    }
-
-    if (now - lastDisplayUpdate >= 200) lastDisplayUpdate = now;
+      lastDisplayUpdate = now;
+  }
 };
 
 void Controller::checkCmds() {
@@ -321,6 +554,10 @@ void Controller::checkCmds() {
                 clock.clearMemory();
                 Serial.println(F(">> Memoria de logs borrada con éxito."));
                 break;
+            case 'C':
+                clock.resetLifetimeLiters();
+                Serial.println(F(">> Contador de litros de vida total reseteado a 0 L."));
+                break;
             case 'L':
                 printHelp();
                 break;
@@ -337,9 +574,10 @@ void Controller::checkCmds() {
             Serial.read();
         }
     }
-}
+};
+
 float Controller::getCorrectionFactor() {
-  int soilM = (soilSensor != nullptr) ? soilSensor->read() : 0;
+  int soilM = (soilSensor != nullptr) ? soilSensor->getMoisturePercentage() : 0;
   const int UPPER_THRESHOLD = 95; // Detener riego si sube de aquí
   const int LOWER_THRESHOLD = 80; // Permitir riego solo si baja de aquí
 
@@ -381,57 +619,4 @@ float Controller::getCorrectionFactor() {
   return factor;
 };
 
-void Controller::check() {
-  DateTime today = clock.now();
-  uint32_t now = millis();
-  static uint32_t lastSlowUpdate = 0;
 
-  // Procesar comandos recibidos por puerto serie
-  checkCmds();
-
-  // Actualizar información estática/lenta solo cada 1 segundo para evitar saturar el I2C
-  if (now - lastSlowUpdate >= 1000) {
-      display.printHour(clock.getHour());
-      display.printDay(clock.getDayOfTheWeek());
-      display.printStation(clock.getStacion());
-      if (soilSensor != nullptr) {
-          display.printSoilMoisture(soilSensor->read());
-      }
-      if (thSensor != nullptr) {
-          // Se asume que THSensor implementa los métodos estándar de la librería DHT
-          display.printTemperature((int)thSensor->readTemperature());
-          display.printHumidity((int)thSensor->readHumidity());
-      }
-      lastSlowUpdate = now;
-  }
-  
-  // Debug de riego programado (cada 30 segundos)
-  static uint32_t lastFactorLog = 0;
-  if (now - lastFactorLog >= 30000) {
-      Serial.print(F(">> Info Riego: Factor de Correccion Actual = ")); Serial.println(getCorrectionFactor());
-      lastFactorLog = now;
-  }
-
-  if (useKeypad) {
-      checkKeypad();
-  } else {
-     checkButtons();
-      // Lógica para el botón de modo físico con detección de flanco e inversión
-      if (ModeButton != nullptr) {
-          static bool lastModeBtnState = HIGH;
-          bool currentModeState = ModeButton->read();
-          if (currentModeState == LOW && lastModeBtnState == HIGH) {
-              if (display.getBackLight()) {
-                  changeState();
-              } else {
-                  display.setON();
-                  setBackLightTime(clock.now());
-                  delay(200); 
-              }
-          }
-          lastModeBtnState = currentModeState;
-      }
-  }
-  this->checkBackLight();
-  this->checkIrrigation(today, getCorrectionFactor());
-};

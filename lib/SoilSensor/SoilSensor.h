@@ -16,9 +16,12 @@ class SoilSensor {
   public:
     SoilSensor(const int SensorPin); 
     void init();
-    int read();
+    //int read();
     void calibrateDry(int value);
     void calibrateWet(int value);
+    int getDryValue();
+    int getWetValue();
+    int getMoisturePercentage();
 };
 
 #endif

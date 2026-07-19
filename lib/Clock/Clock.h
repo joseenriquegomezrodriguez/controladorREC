@@ -5,7 +5,7 @@
 #include <RTClib.h>
 
 // Estructura (11 bytes totales)
-struct LogEntry {
+struct __attribute__((packed)) LogEntry {
   uint32_t startTime; // 4 bytes
   uint32_t endTime;   // 4 bytes
   uint16_t liters;    // 2 bytes
@@ -54,6 +54,7 @@ class Clock {
         // Gestión de Litros Totales (Vida del aparato) en EEPROM Interna
         uint32_t getTotalLifetimeLiters();
         void addLifetimeLiters(uint16_t liters);
+        void resetLifetimeLiters();
 
         void adjustTime(const DateTime& dt) { RTC.adjust(dt); }
         DateTime now() { return RTC.now(); }

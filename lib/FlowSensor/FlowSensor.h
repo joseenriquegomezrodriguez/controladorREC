@@ -12,6 +12,7 @@ class FlowSensor {
     // Variables para el cálculo de caudal instantáneo
     uint32_t _lastPulseCount; 
     uint32_t _lastTime;
+    float _flowRate; // Caudal instantáneo acumulado
     
     static FlowSensor* _instance; // Puntero para la interrupción
 

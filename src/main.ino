@@ -38,8 +38,44 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Frame summer(DateTime(2026, 6, 22), DateTime(2026, 9, 23, 23, 59, 59));  // Verano 2026
   Frame autumn(DateTime(2026, 9, 24), DateTime(2026, 12, 31, 23, 59, 59)); // Otoño 2026 ampliado
 
-  Pumb pumb(4);
+  Program pumbProgramWinter(5, 0, NO_DAYS, &winter);
+  Program pumbProgramSpring(5, 0, NO_DAYS, &spring);
+  Program pumbProgramSummer(5, 0, NO_DAYS, &summer);
+  Program pumbProgramAutumn(5, 0, NO_DAYS, &autumn);
+
+  // Program e1ProgramWinter(5, 3, NO_DAYS, &winter);
+  // Program e1ProgramSpring(5, 3, NO_DAYS, &spring);
+  // Program e1ProgramSummer(5, 3, NO_DAYS, &summer);
+  // Program e1ProgramAutumn(5, 3, NO_DAYS, &autumn);
+
+  // Program e2ProgramWinter(5, 3, NO_DAYS, &winter);
+  // Program e2ProgramSpring(5, 3, NO_DAYS, &spring);
+  // Program e2ProgramSummer(5, 3, NO_DAYS, &summer);
+  // Program e2ProgramAutumn(5, 3, NO_DAYS, &autumn);
+
+  // Program e3ProgramWinter(5, 3, SATURDAY, &winter);
+  // Program e3ProgramSpring(5, 3, MON_WED_SAT, &spring);
+  // Program e3ProgramSummer(5, 3, MON_WED_SAT, &summer);
+  // Program e3ProgramAutumn(5, 3, SATURDAY, &autumn);
   
+//For test
+  Program e1ProgramWinter(5, 3, DAILY, &winter);
+  Program e1ProgramSpring(5, 3, DAILY, &spring);
+  Program e1ProgramSummer(9, 3, DAILY, &summer);
+  Program e1ProgramAutumn(5, 3, DAILY, &autumn);
+
+  Program e2ProgramWinter(5, 3, DAILY, &winter);
+  Program e2ProgramSpring(5, 3, DAILY, &spring);
+  Program e2ProgramSummer(10, 3, DAILY, &summer);
+  Program e2ProgramAutumn(5, 3, DAILY, &autumn);
+
+  Program e3ProgramWinter(5, 3, DAILY, &winter);
+  Program e3ProgramSpring(5, 3, DAILY, &spring);
+  Program e3ProgramSummer(11, 3, DAILY, &summer);
+  Program e3ProgramAutumn(5, 3, DAILY, &autumn);
+  
+
+
   Button E1Button(9);
   Button E2Button(10);
   Button E3Button(11);
@@ -47,26 +83,34 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
 
   FlowSensor flowSensor(2, 7.5); // Pin 2, kFactor 7.5 (ajustar según el sensor)
   
-
-  Program E1Programs[4] = { 
-      Program(5, 5, NO_DAYS, &winter), 
-      Program(5, 5, NO_DAYS, &spring), 
-      Program(5, 5, NO_DAYS, &summer),
-      Program(5, 5, NO_DAYS, &autumn)
+  Program* PumbProgram[4] = { 
+      &pumbProgramWinter,
+      &pumbProgramSpring,
+      &pumbProgramSummer,
+      &pumbProgramAutumn
   };
 
-  Program E2Programs[4] = { 
-      Program(5, 5, NO_DAYS, &winter), 
-      Program(5, 5, NO_DAYS, &spring), 
-      Program(5, 5, NO_DAYS, &summer),
-      Program(5, 5, NO_DAYS, &autumn)
+  Pumb pumb(0, PumbProgram, 4);
+
+  Program* E1Programs[4] = { 
+      &e1ProgramWinter,
+      &e1ProgramSpring,
+      &e1ProgramSummer,
+      &e1ProgramAutumn
   };
 
-  Program E3Programs[4] = { 
-      Program(5, 5, SATURDAY, &winter), 
-      Program(7, 5, MON_WED_SAT, &spring), 
-      Program(5, 5, MON_WED_SAT, &summer),
-      Program(5, 5, SATURDAY, &autumn)
+  Program* E2Programs[4] = { 
+      &e2ProgramWinter,
+      &e2ProgramSpring,
+      &e2ProgramSummer,
+      &e2ProgramAutumn
+  };
+
+  Program* E3Programs[4] = { 
+      &e3ProgramWinter,
+      &e3ProgramSpring,
+      &e3ProgramSummer,
+      &e3ProgramAutumn
   };
   
   // --- ELECTROVÁLVULAS Y CONTROLADOR ---
@@ -74,9 +118,9 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   // 3. CORRECCIÓN: Creación de objetos en el stack (sin 'new')
   // El argumento para Electrovalve es la dirección del primer elemento del array: &E1Programs[0].
   
-  Electrovalve E1(&E1Programs[0], 5);
-  Electrovalve E2(&E2Programs[0], 6); // Usando E2Programs
-  Electrovalve E3(&E3Programs[0], 7); // Usando E3Programs
+  Electrovalve E1(1, E1Programs, 5);
+  Electrovalve E2(2, E2Programs, 6); // Usando E2Programs
+  Electrovalve E3(3, E3Programs, 7); // Usando E3Programs
 
 
   // 3. Agruparlas en arrays (listas)
@@ -86,7 +130,7 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
 
   // 4.  
   // Asumiendo que la clase se llama Controller, se pasa la referencia a los obConjetos.
-  Controller rec(listaValvulas, listaBotones, totalValvulas, &pumb, &flowSensor, &ModeButton, &soilSensor, &thSensor);
+  Controller rec(listaValvulas, listaBotones, totalValvulas, &pumb, &ModeButton, &soilSensor, &thSensor);
 
 void setup() {
   Serial.begin(115200);

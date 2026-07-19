@@ -1,0 +1,81 @@
+
+---
+
+### Diagrama PlantUML (Para archivos `.puml` de VS Code)
+
+Si prefieres usar la extensión de **PlantUML** (`Alt + D`), crea un archivo `.puml` con el siguiente código:
+
+```plantuml
+@startuml Máquina_de_Estados_Riego
+skinparam state {
+  BackgroundColor<<Alarma>> Red/Orange
+  BackgroundColor<<Modo>> LightBlue
+}
+
+[*] --> STOP : init()
+
+state STOP <<Modo>> {
+  [*] --> StopState
+  StopState : Bomba = OFF
+  StopState : Todas las válvulas = OFF
+}
+
+state AUTO <<Modo>> {
+  [*] --> ValidarHumedad
+  
+  state ValidarHumedad {
+    [*] --> ChequearSensores
+    ChequearSensores --> HumedadInhibida : getCorrectionFactor() == 0
+    ChequearSensores --> EjecutandoProgramas : getCorrectionFactor() > 0
+    
+    state HumedadInhibida {
+      [*] --> ValvulasApagadas
+      ValvulasApagadas : Todas las válvulas = OFF
+      ValvulasApagadas : Bomba = OFF
+    }
+    
+    state EjecutandoProgramas {
+      [*] --> ValvulasAutomaticas
+      ValvulasAutomaticas : check(today, factor)
+      ValvulasAutomaticas : Bomba ON si hay válvulas activas
+    }
+  }
+  
+  state RegistroFuga <<Alarma>> {
+    [*] --> FugaDetectada
+    FugaDetectada : Flujo instantáneo > 0.1 l/m
+    FugaDetectada : Cero válvulas abiertas
+    FugaDetectada : Guarda log ERR_LEAK
+  }
+  
+  EjecutandoProgramas --> RegistroFuga : Flujo sin válvulas
+}
+
+state MANUAL <<Modo>> {
+  [*] --> ManualState
+  ManualState : Bomba = ON (Siempre)
+  ManualState : Válvulas ignoran factor de corrección (factor = 1.0)
+  ManualState : Válvulas abiertas/cerradas por botón físico o teclado
+  
+  state RegistroManual {
+    [*] --> BombaManualActiva
+    BombaManualActiva : Guarda log con ID 0x80
+  }
+  
+  ManualState --> RegistroManual : Flujo sin válvulas activas
+}
+
+' Transiciones de cambio de modo cíclicas
+STOP --> AUTO : ModeButton / Key '*' (CambiarModo)
+AUTO --> MANUAL : ModeButton / Key '*' (CambiarModo)
+MANUAL --> STOP : ModeButton / Key '*' (CambiarModo)
+
+' Estado de la Retroiluminación (Subsistema de control de energía)
+state Backlight_Control {
+  [*] --> PantallaApagada
+  PantallaApagada --> PantallaEncendida : Pulsar cualquier botón / tecla
+  PantallaEncendida --> PantallaApagada : Timeout (backLightDuration minutos)
+}
+
+note "El botón de modo y botones de válvulas\nsolo tienen efecto si PantallaEncendida está activo" as N1
+@enduml

@@ -41,7 +41,7 @@ bool Clock::init(){
 
 void Clock::saveLog(uint8_t valve, uint16_t liters, uint32_t startT, uint32_t endT) {
   LogEntry newLog = {startT, endT, liters, valve};
-
+  Serial.print(F(">> Guardando log: Válvula: ")); Serial.print(valve); Serial.print(F(", Litros: ")); Serial.print(liters); Serial.print(F(", Inicio: ")); Serial.print(startT); Serial.print(F(", Fin: ")); Serial.println(endT);
   // 1. Escribir en la posición actual
   uint16_t addr = _startDataAddr + (_nextIndex * sizeof(LogEntry));
   writeEEPROM(addr, (byte*)&newLog, sizeof(LogEntry));
@@ -107,14 +107,27 @@ void Clock::clearMemory() {
 // --- Funciones de bajo nivel para la EEPROM AT24C32 ---
 
 void Clock::writeEEPROM(uint16_t address, byte* data, uint16_t len) {
-  Wire.beginTransmission(_eepromAddr);
-  Wire.write((int)(address >> 8));   // MSB
-  Wire.write((int)(address & 0xFF)); // LSB
-  for (uint16_t i = 0; i < len; i++) {
-    Wire.write(data[i]);
+  uint16_t bytesWritten = 0;
+  while (bytesWritten < len) {
+    uint16_t pageOffset = (address + bytesWritten) % 32;
+    uint16_t maxWrite = 32 - pageOffset;
+    uint16_t toWrite = len - bytesWritten;
+    if (toWrite > maxWrite) {
+      toWrite = maxWrite;
+    }
+    
+    Wire.beginTransmission(_eepromAddr);
+    uint16_t currentAddr = address + bytesWritten;
+    Wire.write((int)(currentAddr >> 8));   // MSB
+    Wire.write((int)(currentAddr & 0xFF)); // LSB
+    for (uint16_t i = 0; i < toWrite; i++) {
+      Wire.write(data[bytesWritten + i]);
+    }
+    Wire.endTransmission();
+    delay(5); // Tiempo de escritura de la EEPROM
+    
+    bytesWritten += toWrite;
   }
-  Wire.endTransmission();
-  delay(5); // Tiempo de escritura de la EEPROM
 }
 
 void Clock::readEEPROM(uint16_t address, byte* data, uint16_t len) {
@@ -147,6 +160,11 @@ uint32_t Clock::getTotalLifetimeLiters() {
 void Clock::addLifetimeLiters(uint16_t liters) {
     uint32_t total = getTotalLifetimeLiters();
     total += liters;
+    writeEEPROM(_lifetimeAddr, (byte*)&total, sizeof(total));
+}
+
+void Clock::resetLifetimeLiters() {
+    uint32_t total = 0;
     writeEEPROM(_lifetimeAddr, (byte*)&total, sizeof(total));
 }
 

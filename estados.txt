@@ -1,31 +1,73 @@
 
-Modos Controlador:
+Modos Controlador: Default mode al iniciar STOP.
 
 STOP
+- Pone el controlador en modo stop:
+    - Apaga bomba y Pone las electvalvulas en modo STOP
 - No checkea la programacion de riego de ninguna electrovalvula.
-- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
-    - Escribir log de riego manual de la electrovavula VALx(M).
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba. 
-- Si no hay electrovalulas encendidas ni la bomba encendidida no deberia existir flujo de agua.
-    - Si existe deberia escribir log de fuga. //todo cerrar el paso 
+- No Permite Utilizar los botones de las electrovalvulas.
+- Si detecta flujo:
+    - Debe haber fuga.
+    - Guardar la fecha de inicio de fuga.
+    - Hacer log de fuga.
+    - Pasar Apagar todo.
+- Conprueba el boton de mode:
+    Si se ha presionado pasa a modo AUTO.
 
-MANU
-- Enciende la bomba.
-    - Si hay flujo contabilizar y hacer log con identificador MANU.
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba.
-- Comproba si toca progama de riego en las electrovalvulas.
-    - Hacer log de la electrovalvula si riega VALx.
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
-- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
-    - Escribir log de riego manual de la electrovavula VALx(M).
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
 
 AUTO
 - Comproba si toca progama de riego en las electrovalvulas.
-    - Hacer log de la electrovalvula si riega VALx.
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba al cabo de 15 sg para no romper la  bomba.
-- Permite encender electrovalvulas de forma manual, encendiendo la electrovalvula y la bomba.
-    - Escribir log de riego manual de la electrovavula VALx(M).
-    - Si NO hay flujo hacer log de error por posible exceso de presion o estar en seco y parar la bomba y la electrovalvula al cabo de 15 sg para no romper la  bomba.
- Si no hay electrovalulas encendidas ni la bomba encendidida no deberia existir flujo de agua.
-    - Si existe deberia escribir log de fuga. //todo cerrar el paso 
+    - Si toca programa de riego en alguna electrovalvula:
+        - Se coge el factor de corrección de riego.
+        - Se guarda el inicio de tiempo de riego y los pulsos antes de empezar el riego.
+        - Si no hay flujo, es decir no aumentan los pulsos:
+            - Se hace log de riego en seco/obstrucción.
+            - Se para el riego bomba y electrovalvula.
+        - Mientras exista flujo y este dentro del tiempo de riego con el factor de correccion:
+            - Se riega.
+        -Al finalizar el tiempo de riego de la electrovalvula:
+            - se guarda la fecha de fin de riego.
+            - Se hace log del Fecha inicio, Fecha fin, tiempo de riego, consumo de agua, identificador de electrovalvula VALX donde X coge valores de 1-numero de electrovalvulas.
+    - Si no toca programa de riego ni hay valvulas encedidas de forma manual:
+          - Si hay flujo hacer log Fuga y parar la bomba y las electrovalvulas.
+    
+- Permite cambiar el estado de las electrovalvulas.
+    - Si una electrovalvula entra en modo manual:
+        - se guarda la fecha de inicio de riego y los pulsos actuales.
+        - Si hay flujo:
+            - Se enciende la bomba y la Electrovalvula y se riega mientras este en estado manual.
+            - Al salir del estado Manual se pasa al estado Stop y se apaga la bomba y la electrovalvula.
+            - Se guarda la fecha de fin de riego y se calcula el consumo de agua.
+            - Se guarda log del riego manual , fecha inicio, fecha fin, consumo, id valvula (VALx(M))
+        - Si no hay flujo:
+            - Posible funcionamiento en seco o obstrucción.
+            - Se apaga la bomba y la electrovalvula.
+            - Se guarda la fecha de fin de riego.
+            - Se hace log del consumo de la electrovalvula hasta el finalizado del flujo.
+            - Se hace log de error por riego en seco o obstruccion.
+            - Pasar el controlador a modo STOP.
+    - Si la electrovalvula esta en modo Stop.
+        - No se comprueba su programación.
+        - La electrovalvula no deberia causar flujo.
+        
+    - Si la electrovalvula esta en modo Auto.
+        - Permite que se compruebe si toca riego.
+    
+- Si se presiona el boton mode se pasa a MANU.
+
+
+MANU
+- Enciende la bomba y se apagan las electrovalvulas.
+    - Se guarda el tiempo de inicio y los pulsos iniciales
+    - Durante el tiempo que este en modo manual MANU.
+    - No se abren electrovalvulas ni ser permite el cambio de estado de las electrovalvulas.
+    - Si hay flujo y cambia de estado a STOP.
+        - Se guarda la fecha de fin de riego y se calcula el consumo
+        - Se guarda el log de fecha inicio, fecha fin, consumo, identificador MANU
+    - Si no hay flujo:
+        - Guardar la fecha de fin.
+        - Hacer log del tiempo de riego manual hasta la obtruccion o secado.
+        - Hacer log de error por posible obstrucción o estar en seco  y para la bomba al cabo de 5 sg para no romper la  bomba.
+            - La fecha de inicio y fin de la obstruccion ha de ser la fecha de detección el consumo 0, y su etiqueta de error.
+        - Se pasa a modo STOP.
+

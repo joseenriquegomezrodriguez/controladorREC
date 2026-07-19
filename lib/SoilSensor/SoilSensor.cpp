@@ -6,7 +6,7 @@ void SoilSensor::init() {
     pinMode(sensorPin, INPUT);
 }
 
-int SoilSensor::read() {
+int SoilSensor::getMoisturePercentage() {
     int rawValue = analogRead(sensorPin);
     
     // Map the raw analog value to a percentage (0-100%)
@@ -20,7 +20,12 @@ int SoilSensor::read() {
     
     return percentage;
 }
-
+int SoilSensor::getDryValue() {
+    return dryValue;
+}
+int SoilSensor::getWetValue() {
+    return wetValue;
+} 
 void SoilSensor::calibrateDry(int value) {
     // Logic to capture current reading as dryValue could be implemented here
     // For now, it uses the hardcoded constant

@@ -1,0 +1,345 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+class Button {
+	+Button(uint8_t Pin)
+	+getLastState() : bool
+	-lastState : bool
+	+read() : int
+	-pin : uint8_t
+	+init() : void
+	+setLastState(bool state) : void
+}
+
+
+class Clock {
+	+Clock()
+	+now() : DateTime
+	+getLog(uint16_t logicalIndex) : LogEntry
+	-RTC : RTC_DS3231
+	-_isFull : bool
+	+init() : bool
+	+getDayOfTheWeek() : char*
+	+getHour() : char*
+	+getStacion() : char*
+	-D : const char[]
+	-D : const char[]
+	-D : const char[]
+	-D : const char[]
+	-D : const char[]
+	-D : const char[]
+	-D : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-E : const char[]
+	-_fullFlagAddr : const uint16_t
+	-_lifetimeAddr : const uint16_t
+	-_maxEntries : const uint16_t
+	-_ptrAddr : const uint16_t
+	-_startDataAddr : const uint16_t
+	-_eepromAddr : const uint8_t
+	-_nextIndex : uint16_t
+	+getCount() : uint16_t
+	+getTotalLifetimeLiters() : uint32_t
+	+addLifetimeLiters(uint16_t liters) : void
+	+adjustTime(const DateTime& dt) : void
+	+clearMemory() : void
+	+dumpLogsToSerial() : void
+	-readEEPROM(uint16_t address, byte* data, uint16_t len) : void
+	+saveError(uint8_t errorCode, uint16_t detail) : void
+	+saveLog(uint8_t valve, uint16_t liters, uint32_t startT, uint32_t endT) : void
+	-writeEEPROM(uint16_t address, byte* data, uint16_t len) : void
+}
+
+
+class Controller {
+	+Controller(Electrovalve** v_array, Button** b_array, uint8_t n_valves, Pumb* PUmb, Button* modeButton, SoilSensor* soilSensor, THSensor* thSensor)
+	+Controller(Electrovalve** v_array, uint8_t n_valves, Pumb* PUmb, CustomKeypad* keypad, SoilSensor* soilSensor, THSensor* thSensor)
+	-ModeButton : Button*
+	-valveButtons : Button**
+	-keypad : CustomKeypad*
+	-backLightTime : DateTime
+	-valves : Electrovalve**
+	-pumb : Pumb*
+	-soilSensor : SoilSensor*
+	-thSensor : THSensor*
+	-moistureInhibit : bool
+	-useKeypad : bool
+	-getCorrectionFactor() : float
+	-leakStartPulses : uint32_t
+	-leakStartTime : uint32_t
+	-manualStartPulses : uint32_t
+	-manualStartTime : uint32_t
+	-noFlowStartTime : uint32_t
+	-backLightDuration : uint8_t
+	-numValves : uint8_t
+	-state : uint8_t
+	-autoController(DateTime today, float correctionFactor) : void
+	+changeState() : void
+	+check() : void
+	-checkAndSaveActiveLeak(DateTime today) : void
+	-checkBackLight() : void
+	-checkButtons() : void
+	-checkCmds() : void
+	-checkKeypad() : void
+	+init() : void
+	-manualController() : void
+	-printHelp() : void
+	+setAuto() : void
+	+setBackLightTime(DateTime time) : void
+	+setManual() : void
+	+setStop() : void
+	-stopController() : void
+}
+
+
+class CustomKeypad {
+	+CustomKeypad(uint8_t address)
+	-_keypad : I2CKeyPad
+	-_lastKey : char
+	+getKey() : char
+	-_layout : char[]
+	+init() : void
+}
+
+
+class Display {
+	+Display()
+	-lcd : LiquidCrystal_I2C
+	-backLight : bool
+	+getBackLight() : bool
+	-pos_D : const uint8_t[]
+	-pos_D : const uint8_t[]
+	-pos_E : const uint8_t[]
+	-pos_E : const uint8_t[]
+	-pos_EV : const uint8_t[]
+	-pos_EV : const uint8_t[]
+	-pos_H : const uint8_t[]
+	-pos_H : const uint8_t[]
+	-pos_HA : const uint8_t[]
+	-pos_HA : const uint8_t[]
+	-pos_HT : const uint8_t[]
+	-pos_HT : const uint8_t[]
+	-pos_M : const uint8_t[]
+	-pos_M : const uint8_t[]
+	-pos_T : const uint8_t[]
+	-pos_T : const uint8_t[]
+	-pos_VA : const uint8_t[]
+	-pos_VA : const uint8_t[]
+	+init() : void
+	-print(uint8_t X, uint8_t Y, const char* txt) : void
+	+printDay(const char* txt) : void
+	+printFlow(float flow) : void
+	+printHour(const char* txt) : void
+	+printHumidity(int humidity) : void
+	+printMode(const char* txt) : void
+	+printSoilMoisture(int soilMoisture) : void
+	+printStation(const char* txt) : void
+	+printTemperature(int temperature) : void
+	+printValveStatus(uint8_t index, char* text) : void
+	+setOFF() : void
+	+setON() : void
+}
+
+
+class Electrovalve {
+	+Electrovalve(uint8_t id, Program** Programs, uint8_t relePin, bool inverted)
+	-programs : Program**
+	-_isManualStart : bool
+	+getIsManualStart() : bool {query}
+	+getLabelState() : char*
+	-labelState : const char[]
+	-labelState : const char[]
+	-labelState : const char[]
+	-_startPulses : uint32_t
+	-_startTime : uint32_t
+	+getLeakStartPulses() : uint32_t
+	+getLeakStartTime() : uint32_t
+	+getStartPulses() : uint32_t {query}
+	+getStartTime() : uint32_t {query}
+	+getValveNoFlowStartTime() : uint32_t
+	-leakStartPulses : uint32_t
+	-leakStartTime : uint32_t
+	-valveNoFlowStartTime : uint32_t
+	+getId() : uint8_t
+	+getLastValveStates() : uint8_t
+	+getState() : uint8_t
+	-id : uint8_t
+	-lastValveStates : uint8_t
+	-state : uint8_t
+	+changeState() : void
+	+check(DateTime date, float factor) : void
+	+setIsManualStart(bool manual) : void
+	+setLastValveStates(uint8_t state) : void
+	+setLeakStartPulses(uint32_t pulses) : void
+	+setLeakStartTime(uint32_t time) : void
+	+setStartPulses(uint32_t pulses) : void
+	+setStartTime(uint32_t time) : void
+	+setValveNoFlowStartTime(uint32_t time) : void
+}
+
+
+class FlowSensor {
+	+FlowSensor(uint8_t pin, float kFactor)
+	+~FlowSensor()
+	-_kFactor : float
+	+getInstantFlow() : float
+	+getKFactor() : float {query}
+	+getVolume() : float
+	-{static} _instance : static FlowSensor*
+	-_lastPulseCount : uint32_t
+	-_lastTime : uint32_t
+	+getPulses() : uint32_t
+	-_pin : uint8_t
+	+{static} handleInterrupt() : void
+	+init() : void
+	+reset() : void
+	+setPulses(uint32_t pulses) : void
+	-_pulseCount : volatile uint32_t
+}
+
+
+class Frame {
+	+Frame(DateTime Init, DateTime End)
+	-end : DateTime
+	+getEnd() : DateTime
+	+getInit() : DateTime
+	-init : DateTime
+	+inTimeFrame(DateTime date) : bool
+	+setFrame(DateTime Init, DateTime End) : void
+}
+
+
+class Program {
+	+Program(uint8_t Hour, uint8_t Duration, const uint8_t* Days, Frame* FRame)
+	-frame : Frame*
+	+getFrame() : Frame*
+	+inTimeFrame(DateTime date) : bool
+	+setProgram(uint8_t Hour, uint8_t Duration, const uint8_t* Days, Frame* FRame) : int
+	-duration : uint8_t
+	+getDuration() : uint8_t
+	+getHour() : uint8_t
+	-hour : uint8_t
+	+getDays() : uint8_t*
+	-days : uint8_t[]
+}
+
+
+class Pumb {
+	+Pumb(uint8_t id, Program** Programs, uint8_t relePin, bool inverted)
+	-labelState : const char[]
+	-labelState : const char[]
+	-labelState : const char[]
+	-state : uint8_t
+	+changeState() : void
+}
+
+
+class Rele {
+	+Rele(uint8_t Pin, bool Status)
+	#_inverted : bool
+	+getStatus() : bool
+	+isActive() : bool {query}
+	#status : bool
+	#pin : uint8_t
+	+init() : void
+	+setOFF() : void
+	+setON() : void
+}
+
+
+class SoilSensor {
+	+SoilSensor(const int SensorPin)
+	-sensorPin : const int
+	-dryValue : int
+	+read() : int
+	-wetValue : int
+	+calibrateDry(int value) : void
+	+calibrateWet(int value) : void
+	+init() : void
+}
+
+
+class THSensor {
+	+THSensor(DHT& Dht)
+	-dht : DHT&
+	+readHumidity() : int
+	+readTemperature() : int
+	+init() : void
+}
+
+
+class LogEntry {
+	+liters : uint16_t
+	+endTime : uint32_t
+	+startTime : uint32_t
+	+valve : uint8_t
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+Electrovalve <|-- Pumb
+
+
+Rele <|-- Electrovalve
+
+
+
+
+
+/' Aggregation relationships '/
+
+Controller "2" o-- Button
+
+
+Controller o-- CustomKeypad
+
+
+Controller o-- Electrovalve
+
+
+Controller o-- Pumb
+
+
+Controller o-- SoilSensor
+
+
+Controller o-- THSensor
+
+
+Electrovalve o-- Program
+
+
+FlowSensor o-- FlowSensor
+
+
+Program o-- Frame
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml
