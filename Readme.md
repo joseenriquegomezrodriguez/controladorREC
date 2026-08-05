@@ -82,7 +82,8 @@ Si la pantalla es encesa:
 
 (Generat per IA)
 
-![Estats de l'aplicació](/images/Estados.svg)
+![Estats del Controlador](/images/EstadoController.svg)
+![Estats de les electrovalvules](/images/EstadosElectorvalve.svg)
 
 ## Diagrama de clases
 

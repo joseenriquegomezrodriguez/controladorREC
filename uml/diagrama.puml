@@ -60,6 +60,7 @@ class Clock {
 	+clearMemory() : void
 	+dumpLogsToSerial() : void
 	-readEEPROM(uint16_t address, byte* data, uint16_t len) : void
+	+resetLifetimeLiters() : void
 	+saveError(uint8_t errorCode, uint16_t detail) : void
 	+saveLog(uint8_t valve, uint16_t liters, uint32_t startT, uint32_t endT) : void
 	-writeEEPROM(uint16_t address, byte* data, uint16_t len) : void
@@ -80,6 +81,7 @@ class Controller {
 	-moistureInhibit : bool
 	-useKeypad : bool
 	-getCorrectionFactor() : float
+	-lastActiveTime : uint32_t
 	-leakStartPulses : uint32_t
 	-leakStartTime : uint32_t
 	-manualStartPulses : uint32_t
@@ -89,7 +91,7 @@ class Controller {
 	-numValves : uint8_t
 	-state : uint8_t
 	-autoController(DateTime today, float correctionFactor) : void
-	+changeState() : void
+	-changeState() : void
 	+check() : void
 	-checkAndSaveActiveLeak(DateTime today) : void
 	-checkBackLight() : void
@@ -99,10 +101,10 @@ class Controller {
 	+init() : void
 	-manualController() : void
 	-printHelp() : void
-	+setAuto() : void
-	+setBackLightTime(DateTime time) : void
-	+setManual() : void
-	+setStop() : void
+	-setAuto() : void
+	-setBackLightTime(DateTime time) : void
+	-setManual() : void
+	-setStop() : void
 	-stopController() : void
 }
 
@@ -180,7 +182,7 @@ class Electrovalve {
 	+getState() : uint8_t
 	-id : uint8_t
 	-lastValveStates : uint8_t
-	-state : uint8_t
+	#state : uint8_t
 	+changeState() : void
 	+check(DateTime date, float factor) : void
 	+setIsManualStart(bool manual) : void
@@ -189,6 +191,7 @@ class Electrovalve {
 	+setLeakStartTime(uint32_t time) : void
 	+setStartPulses(uint32_t pulses) : void
 	+setStartTime(uint32_t time) : void
+	+setState(uint8_t newState) : void
 	+setValveNoFlowStartTime(uint32_t time) : void
 }
 
@@ -196,6 +199,7 @@ class Electrovalve {
 class FlowSensor {
 	+FlowSensor(uint8_t pin, float kFactor)
 	+~FlowSensor()
+	-_flowRate : float
 	-_kFactor : float
 	+getInstantFlow() : float
 	+getKFactor() : float {query}
@@ -241,10 +245,6 @@ class Program {
 
 class Pumb {
 	+Pumb(uint8_t id, Program** Programs, uint8_t relePin, bool inverted)
-	-labelState : const char[]
-	-labelState : const char[]
-	-labelState : const char[]
-	-state : uint8_t
 	+changeState() : void
 }
 
@@ -266,7 +266,9 @@ class SoilSensor {
 	+SoilSensor(const int SensorPin)
 	-sensorPin : const int
 	-dryValue : int
-	+read() : int
+	+getDryValue() : int
+	+getMoisturePercentage() : int
+	+getWetValue() : int
 	-wetValue : int
 	+calibrateDry(int value) : void
 	+calibrateWet(int value) : void

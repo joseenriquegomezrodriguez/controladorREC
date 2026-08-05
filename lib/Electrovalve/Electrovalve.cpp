@@ -59,10 +59,10 @@ void Electrovalve::check(DateTime date, float factor){
 
     if (activeProg != nullptr) {
         if (!isActive()) {
-            // BLOQUEO DE REINICIO: Solo permite abrir la válvula en el minuto 00.
-            // Si el riego termina (ej. a los 9 min por factor), al ser ya el minuto 09,
+            // BLOQUEO DE REINICIO: Solo permite abrir la válvula en el minuto programado de inicio.
+            // Si el riego termina (ej. a los 9 min por factor), al transcurrir el resto de la ventana,
             // esta condición impedirá que se vuelva a abrir inmediatamente.
-            if (date.minute() == 0) {
+            if (date.minute() == activeProg->getMinute()) {
                 setON(); 
             }
         } else {

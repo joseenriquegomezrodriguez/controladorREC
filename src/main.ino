@@ -38,41 +38,40 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Frame summer(DateTime(2026, 6, 22), DateTime(2026, 9, 23, 23, 59, 59));  // Verano 2026
   Frame autumn(DateTime(2026, 9, 24), DateTime(2026, 12, 31, 23, 59, 59)); // Otoño 2026 ampliado
 
-  Program pumbProgramWinter(5, 0, NO_DAYS, &winter);
-  Program pumbProgramSpring(5, 0, NO_DAYS, &spring);
-  Program pumbProgramSummer(5, 0, NO_DAYS, &summer);
-  Program pumbProgramAutumn(5, 0, NO_DAYS, &autumn);
+  Program pumbProgramWinter(5, 0, 0, NO_DAYS, &winter);
+  Program pumbProgramSpring(5, 0, 0, NO_DAYS, &spring);
+  Program pumbProgramSummer(5, 0, 0, NO_DAYS, &summer);
+  Program pumbProgramAutumn(5, 0, 0, NO_DAYS, &autumn);
 
-  // Program e1ProgramWinter(5, 3, NO_DAYS, &winter);
-  // Program e1ProgramSpring(5, 3, NO_DAYS, &spring);
-  // Program e1ProgramSummer(5, 3, NO_DAYS, &summer);
-  // Program e1ProgramAutumn(5, 3, NO_DAYS, &autumn);
+  // Program e1ProgramWinter(5, 0, 3, NO_DAYS, &winter);
+  // Program e1ProgramSpring(5, 0, 3, NO_DAYS, &spring);
+  // Program e1ProgramSummer(5, 0, 3, NO_DAYS, &summer);
+  // Program e1ProgramAutumn(5, 0, 3, NO_DAYS, &autumn);
 
-  // Program e2ProgramWinter(5, 3, NO_DAYS, &winter);
-  // Program e2ProgramSpring(5, 3, NO_DAYS, &spring);
-  // Program e2ProgramSummer(5, 3, NO_DAYS, &summer);
-  // Program e2ProgramAutumn(5, 3, NO_DAYS, &autumn);
+  // Program e2ProgramWinter(5, 0, 3, NO_DAYS, &winter);
+  // Program e2ProgramSpring(5, 0, 3, NO_DAYS, &spring);
+  // Program e2ProgramSummer(5, 0, 3, NO_DAYS, &summer);
+  // Program e2ProgramAutumn(5, 0, 3, NO_DAYS, &autumn);
 
-  // Program e3ProgramWinter(5, 3, SATURDAY, &winter);
-  // Program e3ProgramSpring(5, 3, MON_WED_SAT, &spring);
-  // Program e3ProgramSummer(5, 3, MON_WED_SAT, &summer);
-  // Program e3ProgramAutumn(5, 3, SATURDAY, &autumn);
+  // Program e3ProgramWinter(5, 0, 3, SATURDAY, &winter);
+  // Program e3ProgramSpring(5, 0, 3, MON_WED_SAT, &spring);
+  // Program e3ProgramSummer(5, 0, 3, MON_WED_SAT, &summer);
+  // Program e3ProgramAutumn(5, 0, 3, SATURDAY, &autumn);
   
 //For test
-  Program e1ProgramWinter(5, 3, DAILY, &winter);
-  Program e1ProgramSpring(5, 3, DAILY, &spring);
-  Program e1ProgramSummer(9, 3, DAILY, &summer);
-  Program e1ProgramAutumn(5, 3, DAILY, &autumn);
+  Program e1ProgramWinter(5, 0, 3, NO_DAYS, &winter);
+  Program e1ProgramSpring(5, 0, 3, NO_DAYS, &spring);
+  Program e1ProgramSummer(9, 0, 3, NO_DAYS, &summer);
+  Program e1ProgramAutumn(5, 0, 3, NO_DAYS, &autumn);
 
-  Program e2ProgramWinter(5, 3, DAILY, &winter);
-  Program e2ProgramSpring(5, 3, DAILY, &spring);
-  Program e2ProgramSummer(10, 3, DAILY, &summer);
-  Program e2ProgramAutumn(5, 3, DAILY, &autumn);
+  Program e2ProgramWinter(5, 0, 3, NO_DAYS, &winter);
+  Program e2ProgramSpring(5, 0, 3, NO_DAYS, &spring);
+  Program e2ProgramSummer(10, 0, 3, NO_DAYS, &summer);
+  Program e2ProgramAutumn(5, 0, 3, NO_DAYS, &autumn);
 
-  Program e3ProgramWinter(5, 3, DAILY, &winter);
-  Program e3ProgramSpring(5, 3, DAILY, &spring);
-  Program e3ProgramSummer(11, 3, DAILY, &summer);
-  Program e3ProgramAutumn(5, 3, DAILY, &autumn);
+  Program e3ProgramWinter(5, 0, 3, SATURDAY, &winter);
+  Program e3ProgramSpring(5, 0, 3, MON_WED_SAT, &spring);d
+  Program e3ProgramAutumn(15, 25, 3, SATURDAY, &autumn);
   
 
 
