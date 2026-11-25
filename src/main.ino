@@ -70,8 +70,9 @@ const uint8_t MON_WED_SAT[7] = {0, 1, 0, 1, 0, 0, 1};
   Program e2ProgramAutumn(5, 0, 3, NO_DAYS, &autumn);
 
   Program e3ProgramWinter(5, 0, 3, SATURDAY, &winter);
-  Program e3ProgramSpring(5, 0, 3, MON_WED_SAT, &spring);d
-  Program e3ProgramAutumn(15, 25, 3, SATURDAY, &autumn);
+  Program e3ProgramSpring(5, 0, 3, MON_WED_SAT, &spring);
+  Program e3ProgramSummer(5, 0, 3, MON_WED_SAT, &summer);
+  Program e3ProgramAutumn(5, 0, 3, SATURDAY, &autumn);
   
 
 
